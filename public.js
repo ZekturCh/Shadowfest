@@ -14,9 +14,9 @@ event.packages.forEach((pack, i) => {
   const status=el('span','pass-status',pack.id==='general'?'PREVENTA':pack.id==='crew'?'CON TU CREW':'REVELACIÓN PRÓXIMAMENTE');
   const title=el('h3','',pack.name);
   const price=el('div','pass-price');
-  const description=el('p','pass-description',pack.id==='general'?'Fiesta + sorteo de uno de los 5 baldes de chelas.':pack.id==='crew'?'6 entradas generales + un six pack de chela.':'Una experiencia que revelaremos poco a poco.');
+  const description=el('p','pass-description',pack.id==='general'?'Acceso al evento y sorteo de uno de los 5 baldes de chelas.':pack.id==='crew'?'6 entradas generales y un six pack de chela para compartir.':'Beneficios y precio por revelar. Consulta las próximas novedades.');
   const bottom=el('div','pass-bottom');
-  const action=el('a','button',pack.id==='general'?'COMPRAR ENTRADA ↗':pack.id==='crew'?'PEDIR MI PACK ↗':'CONSULTAR VIP ↗');
+  const action=el('a','button',pack.id==='general'?'COMPRAR POR WHATSAPP ↗':pack.id==='crew'?'CONSULTAR PACK ↗':'CONSULTAR VIP ↗');
   action.dataset.buy=pack.id;
   let count=1;
   let countLabel, subtotal;
@@ -41,11 +41,11 @@ event.packages.forEach((pack, i) => {
     const stage=saleStage(); const detail=requestDetails(pack,count);
     price.replaceChildren();
     if (pack.id==='general') { price.append(el('strong','',`S/ ${stage.price}`),el('span','', '/ persona')); }
-    else if(pack.id==='crew') { price.append(el('strong','', '6 + SIX'),el('span','', 'Consulta el precio del pack')); }
-    else { price.append(el('strong','', 'VIP'),el('span','', 'Los detalles llegan pronto')); }
+    else if(pack.id==='crew') { price.append(el('strong','', '6 entradas'),el('span','', '+ un six pack de chela')); }
+    else { price.append(el('strong','', 'Próximamente'),el('span','', 'Zona VIP')); }
     if(countLabel) countLabel.textContent=count;
     updateBounds();
-    if(subtotal) subtotal.textContent=pack.id==='general'?`Total referencial: S/ ${detail.total}`:`${detail.people} personas · ${count} six pack${count>1?'s':''}`;
+    if(subtotal) subtotal.textContent=pack.id==='general'?`Subtotal: S/ ${detail.total}`:`${detail.people} personas · ${count} six pack${count>1?'s':''}`;
     action.href=whatsappUrl(event.whatsapp,purchaseMessage(detail));
   }
   views.push(refresh); refresh();
@@ -57,18 +57,7 @@ const purchaseVisibility = new IntersectionObserver(entries => {
   mobileBuy.classList.toggle('hidden', entries[0].isIntersecting);
 }, { threshold: 0 });
 purchaseVisibility.observe(document.querySelector('#packages'));
-const motion = matchMedia('(prefers-reduced-motion: reduce)'); const image = document.querySelector('.parallax-image'); const scene = document.querySelector('.space-window');
-let scheduled = false;
-function moveScene() {
-  scheduled = false;
-  if (motion.matches) { image.style.transform = ''; return; }
-  const rect = scene.getBoundingClientRect();
-  if (rect.bottom < 0 || rect.top > innerHeight) return;
-  const displacement = Math.max(-65, Math.min(65, (innerHeight / 2 - (rect.top + rect.height / 2)) * .12));
-  image.style.transform = `translate3d(0, ${displacement}px, 0) scale(1.2)`;
-}
-function scheduleScene() { if (!scheduled) { scheduled = true; requestAnimationFrame(moveScene); } }
-window.addEventListener('scroll', scheduleScene, { passive: true }); window.addEventListener('resize', scheduleScene); motion.addEventListener('change', moveScene); moveScene();
+const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const hero = document.querySelector('.festival-hero');
 let pointerFrame = null;
 hero.addEventListener('pointermove', e => {

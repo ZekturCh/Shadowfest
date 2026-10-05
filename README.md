@@ -6,7 +6,7 @@ Estado: primera versión visual y funcional en **demostración local**. No hay v
 
 Consulta [PLAN.md](PLAN.md) para el alcance y la dirección visual.
 
-La página pública usa ahora las referencias visuales del organizador, con una sección parallax del espacio y copy breve. Datos actuales: [EVENTO.md](EVENTO.md). Moneda: soles peruanos. Etapas automáticas de preventa: S/20 hasta el 11 de octubre inclusive en Lima, luego S/25; S/30 en puerta. Precio del pack y VIP pendientes. Los visuales se identifican como conceptuales.
+La página pública usa ahora las referencias visuales del organizador, con textos breves y tarjetas de compra adaptadas a celular. El mapa conceptual del espacio está retirado hasta contar con una referencia fiel del local. Datos actuales: [EVENTO.md](EVENTO.md). Moneda: soles peruanos. Etapas automáticas de preventa: S/20 hasta el 11 de octubre inclusive en Lima, luego S/25; S/30 en puerta. Precio del pack y VIP pendientes. Los visuales se identifican como conceptuales.
 
 ## Las cuatro páginas
 

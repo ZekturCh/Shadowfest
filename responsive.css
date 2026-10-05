@@ -1,0 +1,54 @@
+/* Readable content, touch controls, and constrained desktop layouts. */
+html{scroll-padding-top:20px}body{overflow-wrap:break-word}input,select{font-size:16px}button,a{ -webkit-tap-highlight-color:transparent }
+.purchase-section,.experience-compact,.visit-section{max-width:1440px;margin-inline:auto}
+.purchase-heading h2{font-size:clamp(42px,4.7vw,66px);line-height:1.05;letter-spacing:-.8px}
+.purchase-heading>p{font-size:15px;line-height:1.7;max-width:370px}
+.pass-status{font-size:11px;letter-spacing:1.6px;line-height:1.6}
+.pass-edition{font-size:10px;letter-spacing:1.3px}
+.pass-content h3{font-size:38px;line-height:1.1}
+.pass-price span{font-size:14px;line-height:1.5}
+.pass-description{font-size:15px;line-height:1.65;color:#dec7d0;min-height:74px}
+.pass-controls{font-size:15px}.pass-stepper button{width:44px;height:44px;font-size:24px}.pass-stepper output{min-width:35px;font-size:16px}
+.pass-subtotal{font-size:14px;line-height:1.6;margin:14px 0 19px;color:#dfbdca}
+.pass-bottom>.button{font-size:12px;letter-spacing:.6px;min-height:54px}
+.pass-vip .pass-price strong{font-size:clamp(26px,2.6vw,36px);overflow-wrap:normal}
+.sale-footnote{font-size:13px;color:#b99da9;line-height:1.8;flex-wrap:wrap}
+.compact-heading{gap:35px}.compact-heading .eyebrow{font-size:11px;max-width:180px}.compact-heading h2{font-size:42px;line-height:1.1}
+.experience-points span{font-size:16px}.experience-points strong{font-size:14px;color:#c0a5b2;line-height:1.65}.experience-points>div{align-items:flex-start;gap:15px;padding:25px 0}
+.visit-info h2{font-size:38px;line-height:1.15;max-width:550px}.visit-info>p:not(.eyebrow){font-size:15px}.visit-info .text-link{font-size:13px;min-height:44px}
+.purchase-help details{font-size:15px}.purchase-help summary{padding:8px 0;min-height:44px}.purchase-help details p{font-size:14px;line-height:1.7}.purchase-help>.button{font-size:12px}
+body[data-page=public] footer{max-width:1440px;margin:auto}footer p,footer>a:last-child{font-size:12px}
+.workspace{max-width:1200px}.workspace>p{font-size:15px}.workspace .notice,.ticket .notice{font-size:14px;line-height:1.7}.demo-banner{font-size:14px;line-height:1.7}.workspace label{font-size:14px}.workspace .button,.workspace .secondary{min-height:44px;font-size:13px}.workspace .staff-links{font-size:14px}table{font-size:14px}td .secondary{display:inline-flex;margin:3px 0;align-items:center}.metric span{font-size:14px}.status{font-size:15px}
+.system-nav{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 30px}.system-nav a{min-height:44px;padding:12px 16px;border:1px solid #493039;font-size:14px;background:#180f15}.system-nav a[aria-current=page]{border-color:#e63745;color:#ff8f9a}
+@media(max-width:1100px) and (min-width:801px){.purchase-grid{gap:15px}.pass-content{padding:22px}.pass-description{font-size:14px}.pass-bottom>.button{font-size:11px}.pass-vip .pass-price strong{font-size:28px}.purchase-heading>p{max-width:300px}}
+@media(max-width:800px){
+ body[data-page=public] header{padding:18px 20px;gap:12px}body[data-page=public] .brand{font-size:25px}body[data-page=public] .brand small{font-size:11px;margin-left:6px}
+ body[data-page=public] nav{gap:0}body[data-page=public] nav>a:not(.nav-cta){display:none!important}body[data-page=public] .nav-cta{min-height:44px;display:flex;align-items:center;font-size:10px;padding:11px 12px;letter-spacing:.2px}
+ .festival-hero{min-height:760px;min-height:max(740px,100svh);padding:125px 22px 150px;align-items:center}
+ .hero-content{width:100%;max-width:620px}.hero-content h1{font-size:clamp(62px,16.7vw,112px);line-height:.92;letter-spacing:-1.8px;transform:rotate(-1deg)}
+ .hero-content .eyebrow{font-size:12px;letter-spacing:2px;margin-bottom:22px}.edition{font-size:10px;letter-spacing:1.5px;margin-bottom:26px}
+ .hero-line{font-size:17px;line-height:1.65}.hero-content .actions{gap:18px;align-items:center;margin:24px 0}
+ .hero-content .button{font-size:12px;letter-spacing:.4px;padding:16px;min-height:54px}.hero-price strong{font-size:34px}.hero-price>span{font-size:12px;max-width:155px}
+ .hero-chips{margin-top:24px;gap:7px}.hero-chips span{font-size:11px;padding:8px 9px;line-height:1.5}
+ .horror-seal{display:none}.hero-foot{left:22px;right:22px;bottom:63px;font-size:10px;letter-spacing:1px;gap:13px}.festival-hero .visual-note{left:22px;font-size:9px;bottom:32px}
+ .hero-blood{height:70px}.hero-chains{display:none}.hero-scene{object-position:68% center;opacity:.78}
+ .purchase-section,.experience-compact,.visit-section{padding:44px 20px}.purchase-heading h2{font-size:43px;line-height:1.06}.purchase-heading>p{font-size:14px;margin-top:16px;max-width:none}
+ .purchase-grid{grid-template-columns:1fr;gap:18px}.purchase-card{display:flex;flex-direction:column}
+ .pass-art{height:72px;min-height:72px;border-right:0;border-bottom:1px solid #673444;display:flex;justify-content:flex-end;padding:10px 22px}
+ .pass-art svg{width:49px;height:49px}.pass-art:after{inset:8px}.pass-edition{left:20px;top:29px;right:auto;font-size:10px;letter-spacing:1.5px;line-height:1}.pass-number{display:none}
+ .pass-content{padding:22px}.pass-status{font-size:11px;letter-spacing:1.4px;margin-bottom:10px}.pass-content h3{font-size:35px;margin-bottom:13px}
+ .pass-price{min-height:0}.pass-price strong{font-size:41px}.pass-price span{font-size:14px}.pass-description{font-size:15px;min-height:0;margin:17px 0 20px}
+ .pass-vip .pass-art{min-height:72px;border-right:0}.pass-vip .pass-price strong{font-size:32px}.pass-vip .pass-bottom{min-height:0;display:block;padding-top:20px}
+ .pass-bottom{padding-top:19px}.pass-bottom>.button{font-size:12px;min-height:54px;width:100%}.pass-controls{font-size:15px}.pass-subtotal{font-size:14px;margin:13px 0 18px}
+ .sale-footnote{font-size:12px;margin-top:18px}.sale-footnote span{margin-top:8px}
+ .compact-heading h2{font-size:36px}.compact-heading .eyebrow{font-size:11px;max-width:none}.experience-points{margin-bottom:0}.experience-points svg{flex-basis:36px;width:36px;height:36px}.experience-points>div{padding:20px 0}
+ .visit-info h2{font-size:33px}.visit-info>p:not(.eyebrow){font-size:14px}.visit-section{gap:24px}
+ .mobile-buy{left:12px;right:12px;bottom:12px;font-size:12px;letter-spacing:.5px;min-height:54px;padding:16px 19px;padding-bottom:max(16px,env(safe-area-inset-bottom));border-radius:6px}
+ body[data-page=public] footer{padding:28px 20px 100px;gap:20px}footer p{font-size:12px}footer>a:last-child{font-size:13px;min-height:44px;display:flex;align-items:center}
+ .workspace{padding:32px 20px;min-width:0}.workspace h1{font-size:48px!important;line-height:1}.workspace .panel{padding:20px}.demo-banner{padding:14px 20px;font-size:13px}.metric{padding:14px 10px}.metric strong{font-size:34px}.metric span{font-size:12px}
+ .ticket{margin:15px auto}.ticket h2{font-size:44px}.qr-box{padding:12px;max-width:100%}.qr-box img,.qr-box canvas{max-width:100%;height:auto}
+ header .staff-links{flex-wrap:wrap;justify-content:flex-end;font-size:12px;gap:12px}header .staff-links>a{display:block!important;min-height:44px;padding-block:12px}
+ .toolbar{gap:10px}.toolbar>input,.toolbar>select,.toolbar>button{width:100%}.table-wrap{max-width:100%;border:1px solid #342725}table{min-width:530px}th,td{padding:14px 10px}
+}
+@media(max-width:359px){body[data-page=public] header{padding-inline:14px}.festival-hero{padding-inline:18px}.hero-content h1{font-size:clamp(56px,16vw,62px)}.hero-content .actions{align-items:flex-start;flex-direction:column;gap:13px}.hero-content .button{width:100%}.hero-price{display:flex;gap:12px;align-items:center}.hero-price>span{max-width:none}.purchase-section,.experience-compact,.visit-section{padding-inline:16px}.pass-content{padding:20px}}
+.system-nav>a{display:flex!important;align-items:center}
