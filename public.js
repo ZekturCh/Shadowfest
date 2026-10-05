@@ -6,11 +6,17 @@ import { surprises, initialSold } from './surprises.js';
 const unlockCards = document.querySelector('#unlock-cards');
 function renderUnlocks(sold) {
   document.querySelector('#sold-count').textContent=sold;
-  const max=surprises.at(-1)?.goal||sold;
+  const next=surprises.find(s=>s.goal>sold);
+  const max=next?.goal||surprises.at(-1)?.goal||sold;
+  const percentage=Math.min(100,Math.floor(sold/max*100));
+  document.querySelector('#surprises').style.setProperty('--unlock-angle',`${percentage*3.6}deg`);
+  document.querySelector('#unlock-percentage').textContent=`${percentage}%`;
+  document.querySelector('#next-goal').textContent=next?`${next.goal} entradas`:'Todas las metas alcanzadas';
+  document.querySelector('#next-gap').textContent=next?`Faltan ${next.goal-sold} para la próxima revelación.`:'La noche está desbloqueada.';
   document.querySelector('#unlock-progress').style.width=`${Math.min(100,sold/max*100)}%`;
   const track=document.querySelector('.unlock-track');track.setAttribute('aria-valuemax',max);track.setAttribute('aria-valuenow',sold);
   unlockCards.replaceChildren();
-  surprises.forEach(s=>{const card=document.createElement('article');card.className=`unlock-card ${sold>=s.goal?'unlocked':''}`;const label=document.createElement('span');label.className='lock-label';label.textContent=sold>=s.goal?'META ALCANZADA':`${s.goal} ENTRADAS · BLOQUEADO`;const title=document.createElement('h3');title.textContent=s.title;const description=document.createElement('p');description.textContent=sold>=s.goal?s.description:`Faltan ${s.goal-sold} entradas para abrir esta sorpresa.`;card.append(label,title,description);unlockCards.append(card);});
+  surprises.forEach((s,i)=>{const card=document.createElement('article');card.className=`unlock-card ${sold>=s.goal?'unlocked':next===s?'next-unlock':''}`;const number=document.createElement('span');number.className='unlock-index';number.textContent=`0${i+1}`;number.setAttribute('aria-hidden','true');const label=document.createElement('span');label.className='lock-label';label.textContent=sold>=s.goal?'DESBLOQUEADA':next===s?'PRÓXIMA REVELACIÓN':'BAJO LLAVE';const title=document.createElement('h3');title.textContent=s.title;const goal=document.createElement('strong');goal.className='unlock-goal';goal.textContent=`${s.goal} entradas`;const description=document.createElement('p');description.textContent=sold>=s.goal?s.description:`${s.goal-sold} entradas para desbloquear`;card.append(number,label,title,goal,description);unlockCards.append(card);});
 }
 async function updateSold(){try{const stats=await request('stats');renderUnlocks(stats.sold);document.querySelector('#unlock-status').textContent=localDemo?'Vista previa: 110 ventas iniciales + entradas de prueba emitidas en este navegador. Metas propuestas por confirmar.':'Cada entrada confirmada nos acerca a la próxima revelación.';}catch{document.querySelector('#unlock-status').textContent='110 entradas confirmadas por la organización. Actualización de ventas temporalmente no disponible.';}}
 renderUnlocks(initialSold);updateSold();setInterval(updateSold,15000);window.addEventListener('storage',updateSold);
