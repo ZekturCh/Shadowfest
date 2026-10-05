@@ -1,0 +1,97 @@
+/* Shadow Fest: theatrical horror + underground reggaeton art direction. */
+body[data-page="public"] { --red:#ef1935; --bone:#f4eddf; --line:#51303b; background:#09070b; }
+body[data-page="public"] header { padding-top:24px; padding-bottom:24px; background:linear-gradient(#080508e8,transparent); border-bottom:1px solid #ce17332e; }
+.brand { letter-spacing:-.5px; }
+.festival-hero { min-height:950px; min-height:max(850px,100svh); isolation:isolate; padding-top:155px; }
+.hero-scene { object-position:center; opacity:1; transform:translate3d(var(--art-x,0px),var(--art-y,0px),0) scale(1.035); transition:transform .3s ease-out; }
+.hero-shade { background:linear-gradient(90deg,#080509e8 0%,#0a0407a8 35%,#0a03050a 66%),linear-gradient(0deg,#09070b 1%,transparent 28%); }
+.hero-content { max-width:890px; }
+.hero-content .eyebrow { color:#ff425d; letter-spacing:5px; }
+.edition { color:#dfc3c8; letter-spacing:3px; display:flex; gap:12px; align-items:center; }
+.edition:before { content:''; width:28px; height:1px; background:#eb213e; }
+.hero-content h1 { font-size:clamp(90px,11vw,159px); transform:rotate(-2deg); transform-origin:left center; letter-spacing:-3px; text-shadow:0 8px 45px #000a; }
+.hero-content h1 em { color:#ee1736; text-shadow:2px 3px 0 #7e0616,0 0 55px #ee173633; }
+.hero-line { font-size:18px; color:#dfd3d5; }
+.hero-chips span { border-color:#ef234e5c; background:#17080dae; border-radius:2px; font-size:10px; }
+body[data-page="public"] .button { position:relative; background:linear-gradient(130deg,#ff2445,#bb0925); border-color:#fd3f58; box-shadow:0 5px 25px #ca11262b,inset 0 1px #ff839c55; min-height:54px; }
+body[data-page="public"] .button:after { content:' '; width:5px; height:5px; background:#fff9; position:absolute; right:5px; bottom:5px; }
+body[data-page="public"] .button:hover { box-shadow:0 8px 35px #ee173657; filter:brightness(1.1); }
+.hero-chains { position:absolute; right:3%; top:90px; width:1px; height:65%; background:linear-gradient(transparent,#ff285877,transparent); transform:rotate(19deg); box-shadow:19px 0 0 #a5294622; pointer-events:none; }
+.horror-seal { position:absolute; right:7%; bottom:140px; z-index:2; width:135px; height:135px; border-radius:50%; border:1px solid #fa455977; background:#10050b88; backdrop-filter:blur(8px); display:grid; place-content:center; text-align:center; transform:rotate(12deg); box-shadow:0 0 50px #bf14262a; }
+.horror-seal:before { content:''; position:absolute; inset:7px; border-radius:50%; border:1px dashed #ff63777a; }
+.horror-seal span { font-size:9px; letter-spacing:2px; color:#eda6b0; }
+.horror-seal strong { font:800 32px/.95 'Barlow Condensed',Impact,sans-serif; margin:8px 0; }
+.hero-blood { position:absolute; left:0; right:0; bottom:-1px; height:110px; background:url('assets/blood-edge.svg') center/100% 100% no-repeat; transform:rotate(180deg); opacity:.72; pointer-events:none; z-index:0; }
+.hero-foot { bottom:58px; z-index:1; }
+.festival-hero .visual-note { bottom:20px; left:6%; right:auto; font-size:8px; color:#ddbcc799; }
+.ticker { transform:rotate(-1deg); width:102%; margin-left:-1%; border-top:1px solid #ff6a7e; border-bottom:1px solid #ff6a7e; position:relative; z-index:2; background:#ed1d3b; box-shadow:0 0 50px #b010282b; }
+body[data-page="public"] main { overflow:hidden; }
+.space-section { background:radial-gradient(ellipse at 10% 25%,#4d0c2233,transparent 60%); padding-top:110px; }
+.space-heading h2 { transform:rotate(-1deg); }
+.space-window { border:1px solid #a441593d; box-shadow:0 25px 100px #a30b1812; clip-path:polygon(0 0,98% 0,100% 5%,100% 100%,2% 100%,0 95%); }
+.space-label { border-color:#ff264252; background:#0f060ce6; }
+.space-label .live-dot { background:#ff304f; box-shadow:0 0 15px #ff173a; }
+.space-details { color:#b18296; }
+.night-section .section-heading { margin-bottom:45px; }
+.outline-word { -webkit-text-stroke-color:#ae163957; transform:rotate(-7deg); }
+.night-grid { gap:23px; grid-template-columns:1fr 1fr 1fr; }
+.night-card { height:440px; border-color:#80243e55; background:radial-gradient(ellipse at 50% 20%,#76142a55,transparent 70%),#140910; overflow:visible; box-shadow:0 15px 35px #0004; }
+.night-card:nth-child(1) { transform:rotate(-2deg); }
+.night-card:nth-child(2) { transform:translateY(24px); border-color:#85288a55; background:radial-gradient(ellipse at 50% 15%,#81299855,transparent 70%),#110918; }
+.night-card:nth-child(3) { transform:rotate(2deg); }
+.night-card img { opacity:.12; object-position:center 80%; position:absolute; inset:0; }
+.night-card:after { background:linear-gradient(0deg,#110810 1%,transparent); pointer-events:none; }
+.night-card .festival-icon { position:absolute; top:34px; left:calc(50% - 68px); width:136px; height:136px; color:#f8647b; filter:drop-shadow(0 0 15px #fa2b4955); z-index:1; }
+.night-card:nth-child(2) .festival-icon { color:#df91ff; filter:drop-shadow(0 0 15px #aa33f366); }
+.night-card .card-number { position:absolute; right:17px; top:14px; font:700 13px 'Barlow Condensed',sans-serif; letter-spacing:2px; color:#b58190; z-index:2; }
+.night-card>div { bottom:28px; left:25px; right:25px; }
+.night-card h3 { font-size:44px; margin:13px 0; color:#f4eddf; }
+.night-card p { color:#c5a4b1; font-size:12px; }
+.night-card .eyebrow { color:#fb7186; }
+.reference-caption { margin-top:50px; }
+.vip-reveal { border-color:#7c345566; background:radial-gradient(ellipse at 85% 15%,#68145966,transparent 70%),linear-gradient(120deg,#140c16,#1a0810); clip-path:polygon(0 4%,98% 0,100% 94%,2% 100%); padding:95px 50px; }
+.vip-stamp { border-color:#ce557b; background:#240b18; box-shadow:5px 5px 0 #4a142a; }
+.price-timeline { border:0; gap:14px; }
+.price-timeline>div { border:1px solid #623243!important; background:#160b12; position:relative; }
+.current-stage { box-shadow:inset 0 3px #f12748,0 15px 40px #ef17351a; background:linear-gradient(145deg,#420e1b,#150910)!important; }
+.cards { gap:23px; }
+body[data-page="public"] .card { background:#170b12; border:1px solid #633242; box-shadow:0 15px 40px #0003; padding:30px 30px 26px; overflow:hidden; }
+body[data-page="public"] .card:before { content:'ADMIT ONE / SHADOW FEST'; position:absolute; right:-50px; top:55px; transform:rotate(90deg); font:8px monospace; letter-spacing:2px; color:#8b5267; }
+body[data-page="public"] .card:after { content:''; display:block; height:9px; margin:24px -30px -26px; background:repeating-linear-gradient(90deg,#170b12 0 4px,#ee294956 4px 5px,#170b12 5px 8px); }
+body[data-page="public"] .card:nth-child(2) { border-color:#c13050; background:radial-gradient(ellipse at 90% 0,#64193055,transparent),#190a12; }
+body[data-page="public"] .card:nth-child(3) { border-color:#81338b; background:radial-gradient(ellipse at 90% 0,#5b197955,transparent),#160a1c; }
+body[data-page="public"] .card .price { border-top:1px dashed #915168; font:700 22px 'Barlow Condensed',Impact,sans-serif; }
+.request-section { position:relative; background:radial-gradient(ellipse at 0 60%,#60102244,transparent 65%),#0b070b; }
+.request-section:before { content:''; position:absolute; inset:0 0 auto; height:75px; background:url('assets/blood-edge.svg') center/100% 100%; opacity:.4; pointer-events:none; }
+.request-section .panel { background:linear-gradient(145deg,#211018,#140a10); border-color:#73243c; box-shadow:0 20px 80px #0006; }
+.request-section .eyebrow { color:#ff405d; }
+.selection-detail { border-left-color:#ef294c; color:#f2b5c3; }
+.whatsapp-note { display:flex; align-items:center; gap:9px; margin-top:20px; font-size:11px; color:#bca4ab; }
+.whatsapp-note:before { content:''; display:block; width:6px; height:6px; border-radius:50%; background:#70d99b; box-shadow:0 0 12px #70d99b55; }
+@media(max-width:800px){
+ .festival-hero { min-height:900px; padding-top:145px; padding-bottom:165px; }
+ .hero-scene { object-position:63% center; opacity:.72; }
+ .hero-shade { background:linear-gradient(90deg,#080509db,#0805094d),linear-gradient(0deg,#09070b,transparent 55%); }
+ .hero-content h1 { font-size:clamp(79px,17vw,124px); letter-spacing:-2px; }
+ .hero-content .eyebrow { letter-spacing:3px; font-size:10px; }
+ .horror-seal { width:98px; height:98px; right:8%; bottom:125px; }
+ .horror-seal strong { font-size:23px; margin:5px 0; }
+ .horror-seal span { font-size:7px; }
+ .hero-blood { height:85px; }
+ .hero-foot { bottom:60px; font-size:8px; }
+ .festival-hero .visual-note { bottom:28px; }
+ .night-grid { grid-template-columns:1fr; gap:30px; padding:0 8px; }
+ .night-card { height:400px; }
+ .night-card:nth-child(2) { transform:none; }
+ .night-card:nth-child(1) { transform:rotate(-1.5deg); }
+ .night-card:nth-child(3) { transform:rotate(1.5deg); }
+ .night-card .festival-icon { width:110px; height:110px; left:calc(50% - 55px); top:22px; }
+ .night-card h3 { font-size:43px; }
+ .reference-caption { margin-top:32px; }
+ .vip-reveal { padding:70px 27px; }
+ .price-timeline { gap:7px; }
+ .price-timeline>div { padding:16px 8px; }
+ .space-section { padding-top:70px; }
+ .mobile-buy { background:linear-gradient(120deg,#f72747,#b70728); }
+}
+@media(prefers-reduced-motion:reduce){.night-card:hover img{transform:none}.hero-content h1{transform:rotate(-2deg)}.hero-scene{transform:none;transition:none}}

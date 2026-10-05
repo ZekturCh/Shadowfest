@@ -23,7 +23,9 @@ Para probar: entrar a administración, emitir una entrada con pago de prueba con
 
 ## Configuración y límites
 
-Editar `config.js` para el evento, paquetes y número de WhatsApp en formato internacional solo con dígitos. No se ha inventado un número ni precios. La solicitud no se guarda ni se envía automáticamente: el visitante revisa el mensaje y lo envía por chat.
+Editar `config.js` para el evento, paquetes y número de WhatsApp en formato internacional solo con dígitos. WhatsApp del organizador: +51 955 121 011. El formulario abre directamente su chat con el paquete y cantidad elegidos. El visitante envía el mensaje desde WhatsApp; la web no registra la solicitud ni confirma el pago por abrir el chat.
+
+Arte original de portada creado con la herramienta integrada de generación de imágenes, optimizado a WebP para la web. Incluye decoración SVG de sangre ficticia y símbolos propios, pases con detalles gráficos y movimiento sutil del arte al usar el mouse. Las preferencias de reducción de movimiento desactivan estos efectos. Prompt y archivos del arte: [ARTE.md](ARTE.md).
 
 Los datos de prueba se guardan en localStorage y solo se comparten en el mismo origen y navegador. El bloqueo entre pestañas evita consumir dos veces una entrada local; no reemplaza una transacción de servidor. No hay autenticación implementada ni panel privado de producción. No usar esta demostración para compradores reales.
 

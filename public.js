@@ -1,5 +1,6 @@
 import { event } from './config.js';
 import { saleStage, requestDetails } from './sales.js';
+import { whatsappUrl } from './whatsapp.js';
 const select = document.querySelector('#package-select');
 const quantity = document.querySelector('#request-quantity');
 let message = '';
@@ -45,7 +46,7 @@ document.querySelector('#request-form').addEventListener('submit', e => {
     message = `¡Voy a Shadow Fest 4.0! Soy ${values.get('name').trim()}.\n31 de octubre · Lima\n${detail.line}\n¿Me confirmas disponibilidad${detail.total === null ? ', precio' : ''} y los datos para coordinar la transferencia?`;
     document.querySelector('#message-preview').textContent = message; document.querySelector('#request-summary').classList.remove('hidden');
     const chat = document.querySelector('#chat-link'); chat.classList.add('hidden'); chat.removeAttribute('href');
-    if (/^\d{8,15}$/.test(event.whatsapp)) { chat.href = `https://wa.me/${event.whatsapp}?text=${encodeURIComponent(message)}`; chat.classList.remove('hidden'); status.textContent = 'Revisa y envía tu mensaje al organizador.'; }
+    if (/^\d{8,15}$/.test(event.whatsapp)) { chat.href = whatsappUrl(event.whatsapp, message); chat.classList.remove('hidden'); status.textContent = 'Continúa en WhatsApp y envía tu mensaje al organizador.'; window.location.assign(chat.href); }
     else status.textContent = 'Falta configurar el WhatsApp del organizador. Por ahora puedes copiar el mensaje.';
   } catch (error) { message = ''; document.querySelector('#request-summary').classList.remove('hidden'); document.querySelector('#message-preview').textContent = ''; document.querySelector('#chat-link').classList.add('hidden'); status.textContent = error.message; }
 });
@@ -68,3 +69,15 @@ function moveScene() {
 }
 function scheduleScene() { if (!scheduled) { scheduled = true; requestAnimationFrame(moveScene); } }
 window.addEventListener('scroll', scheduleScene, { passive: true }); window.addEventListener('resize', scheduleScene); motion.addEventListener('change', moveScene); moveScene();
+const hero = document.querySelector('.festival-hero');
+let pointerFrame = null;
+hero.addEventListener('pointermove', e => {
+  if (motion.matches || e.pointerType !== 'mouse') return;
+  const rect = hero.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width - .5) * 16;
+  const y = ((e.clientY - rect.top) / rect.height - .5) * 12;
+  if (pointerFrame) cancelAnimationFrame(pointerFrame);
+  pointerFrame = requestAnimationFrame(() => { hero.style.setProperty('--art-x', `${x}px`); hero.style.setProperty('--art-y', `${y}px`); });
+});
+function resetHero() { if (pointerFrame) cancelAnimationFrame(pointerFrame); hero.style.setProperty('--art-x', '0px'); hero.style.setProperty('--art-y', '0px'); }
+hero.addEventListener('pointerleave', resetHero); motion.addEventListener('change', resetHero);

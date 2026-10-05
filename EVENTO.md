@@ -24,6 +24,6 @@ La propuesta y videos suministrados muestran patio, DJ en balcón, tentáculos d
 
 ## Datos necesarios para activar ventas
 
-WhatsApp, precios de pack/VIP, horarios, aforo y configuración del backend con cuentas del staff. Pago por transferencia coordinado por chat; emisión individual tras verificación manual. La web actual sigue siendo una demostración local de administración.
+WhatsApp configurado: +51 955 121 011. Pendientes: precios de pack/VIP, horarios, aforo y configuración del backend con cuentas del staff. Pago por transferencia coordinado por chat; emisión individual tras verificación manual. La web actual sigue siendo una demostración local de administración.
 
 La preventa no tiene cierre automático al comenzar el evento: falta confirmar su hora de cierre. El precio en puerta se informa por separado.
