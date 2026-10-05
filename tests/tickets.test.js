@@ -1,0 +1,23 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { webcrypto } from 'node:crypto';
+const memory = new Map();
+globalThis.localStorage = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) };
+Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+let queue = Promise.resolve();
+Object.defineProperty(globalThis, 'navigator', { value: { locks: { request: (_key, action) => { const result = queue.then(action); queue = result.catch(() => {}); return result; } } }, configurable: true });
+globalThis.location = { href: 'http://localhost:5173/validar.html', origin: 'http://localhost:5173' };
+const store = await import('../demo-store.js');
+test('requires payment confirmation; rejects reused and cancelled tickets; concurrent admission consumes once', async () => {
+  await assert.rejects(store.issueTicket('Ana', 'general', false), /confirmar/);
+  const ticket = await store.issueTicket('Ana', 'general', true);
+  assert.equal(store.extractCode(store.ticketUrl(ticket.id)), ticket.id);
+  assert.throws(() => store.extractCode('https://another.example/qr.html?c=' + ticket.id), /otro sitio/);
+  const attempts = await Promise.allSettled([store.validateTicket(ticket.id), store.validateTicket(ticket.id)]);
+  assert.equal(attempts.filter(a => a.status === 'fulfilled').length, 1);
+  assert.equal(store.getTicket(ticket.id).status, 'used');
+  await assert.rejects(store.validateTicket(ticket.id), /ya utilizada/);
+  const cancelled = await store.issueTicket('Luis', 'vip', true); await store.cancelTicket(cancelled.id);
+  await assert.rejects(store.validateTicket(cancelled.id), /anulada/);
+  await assert.rejects(store.validateTicket(webcrypto.randomUUID()), /no existe/);
+});
