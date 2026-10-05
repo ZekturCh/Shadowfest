@@ -1,5 +1,15 @@
 # Arte de Shadow Fest
 
+## Mapa profesional del evento
+
+Nueva visualización creada con la herramienta integrada de generación de imágenes, usando la propuesta espacial del organizador como referencia. Conserva la relación entre DJ, general, VIP, baños, comida e ingreso. Se muestra completo en la web, con un enlace para ampliarlo y una nota de distribución conceptual.
+
+Archivo web: `assets/festival-map-v2.webp`. Máster PNG entregado junto al proyecto como `ShadowFest-event-map.png`.
+
+Prompt final del mapa:
+
+> Create a high-end architectural visualization for Shadow Fest 4.0, a Halloween reggaeton courtyard festival in Lima. Use the supplied image ONLY as a spatial layout reference: preserve the courtyard geography, rear house with DJ balcony, open central general dance area, lounge VIP upper right, bathrooms on right, food stall left and check-in gate front center. Ignore and REMOVE the reference's black presentation text box completely. Generate a new clean premium render, not a presentation slide. Wide landscape 3:2 or 16:9 high resolution, full elevated isometric three-quarter aerial view with the entire event footprint visible, no extreme close-up, no cropped gate or balcony. Elegant realistic architectural materials and meticulous lighting, sharp clean cinematic night render with red uplighted trees and tasteful purple neon. At the rear house balcony add the event's signature curved DJ console and curling neon purple tentacles climbing the facade; DJ silhouette small. Central courtyard remains a spacious clearly legible open dancing zone, dark stone paving with subtle red/violet reflections. VIP upper right is intimate with a few lounge sofas, velvet ropes and warm amber light. Food stall left; modest bathroom building right; entry checkpoint front. A small scattering of adults as scale, no overcrowding. Surround the property with a subtle dark background so the perimeter is visible. Actual lighted signage only with these exact Spanish words: 'DJ', 'GENERAL', 'VIP', 'BAÑOS', 'COMIDA', 'INGRESO'. Clear correct typography and appropriately placed readable labels, not massive text. No extra headlines, no watermark, no browser/UI, no logos, no gore spread over the venue. Professional venue map artwork, sophisticated rather than cartoon or game, rich architectural depth, highly detailed crisp event production mockup.
+
 Modo: herramienta integrada de generación de imágenes. Arte conceptual, no fotografía de un evento realizado.
 
 Archivos: `assets/horror-hero.png` (máster), `assets/horror-hero.webp` (versión de uso web). Decoraciones nativas: `assets/blood-edge.svg` y `assets/festival-icons.svg`.
