@@ -1,9 +1,9 @@
 export const event = {
-  name: 'ShadowFest', date: 'Fecha por anunciar', location: 'Lugar por anunciar',
-  whatsapp: '', currency: 'CLP',
+  name: 'Shadow Fest 4.0', date: '31 OCT 2026', location: 'Alameda Los Pinos 327 · Lima',
+  minimumAge: 18, whatsapp: '', currency: 'PEN',
   packages: [
-    { id: 'general', name: 'General', tag: 'ENTRA EN LAS SOMBRAS', description: 'Acceso individual. Beneficios y precio por confirmar.' },
-    { id: 'crew', name: 'Crew', tag: 'VEN CON TU GENTE', description: 'Paquete para grupos. Cupos y beneficios por confirmar.' },
-    { id: 'vip', name: 'VIP', tag: 'OTRO NIVEL DE OSCURIDAD', description: 'Experiencia especial. Beneficios y precio por confirmar.' }
+    { id: 'general', name: 'General', tag: 'TU NOCHE EMPIEZA AQUÍ', description: 'Acceso a la fiesta + participación en el sorteo de uno de los 5 baldes de chelas.' },
+    { id: 'crew', name: 'Pack de 6', tag: 'TU CREW. TU SIX.', description: '6 entradas generales + un six pack de chela. Precio del pack por anunciar.' },
+    { id: 'vip', name: 'Zona VIP', tag: 'NO TODO SE REVELA HOY', description: 'Otra forma de vivir Shadow Fest. Revelaremos sus detalles poco a poco.', teaser: true }
   ]
 };
