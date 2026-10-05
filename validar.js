@@ -1,24 +1,27 @@
 import { event } from './config.js';
-import { getTicket, extractCode, validateTicket, installDemoBanner } from './demo-store.js';
-installDemoBanner();
-let currentCode = '', stream = null, scanning = false, scanGeneration = 0;
+import { request, extractCode } from './platform.js';
+import { setupAccess } from './access.js';
+setupAccess(['supreme','validator'],async()=>{});
+let currentCode = '', stream = null, scanning = false, scanGeneration = 0, lookupGeneration = 0;
 const video = document.querySelector('#scanner-video'); const scanStatus = document.querySelector('#scan-status'); const feedback = document.querySelector('#validation-status'); const confirmButton = document.querySelector('#confirm-entry');
-function lookup(value) {
+async function lookup(value) {
+  const generation = ++lookupGeneration;
   currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.remove('hidden'); document.querySelector('#scan-name').textContent = ''; document.querySelector('#scan-package').textContent = '';
   try {
-    const code = extractCode(value); const ticket = getTicket(code);
-    if (!ticket) throw new Error('Entrada inexistente en este navegador de demostración.');
+    const code = extractCode(value); const ticket = await request('lookup', { code });
+    if (generation !== lookupGeneration) return;
+    if (!ticket.registered) throw new Error('Comprador pendiente de registro. No autorizar ingreso.');
     document.querySelector('#scan-name').textContent = ticket.name; document.querySelector('#scan-package').textContent = event.packages.find(p => p.id === ticket.packageId)?.name || '';
     if (ticket.status === 'used') throw new Error('QR ya utilizado. No autorizar ingreso.');
     if (ticket.status !== 'valid') throw new Error('Entrada anulada. No autorizar ingreso.');
     currentCode = code; confirmButton.disabled = false; feedback.textContent = 'Entrada válida. Confirma para registrar el ingreso.'; feedback.className = 'status valid';
-  } catch (error) { feedback.textContent = error.message; feedback.className = 'status error'; }
+  } catch (error) { if (generation !== lookupGeneration) return; feedback.textContent = error.message; feedback.className = 'status error'; }
 }
 document.querySelector('#lookup-form').addEventListener('submit', e => { e.preventDefault(); stopCamera(); lookup(document.querySelector('#code-input').value); });
-document.querySelector('#code-input').addEventListener('input', () => { currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.add('hidden'); });
+document.querySelector('#code-input').addEventListener('input', () => { lookupGeneration++; currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.add('hidden'); });
 confirmButton.addEventListener('click', async () => {
   if (!currentCode) return; const code = currentCode; currentCode = ''; confirmButton.disabled = true;
-  try { await validateTicket(code); feedback.textContent = 'INGRESO REGISTRADO. Entrada consumida; no permite un segundo acceso.'; feedback.className = 'status valid'; }
+  try { await request('validate',{code}); feedback.textContent = 'INGRESO REGISTRADO. Entrada consumida; no permite un segundo acceso.'; feedback.className = 'status valid'; }
   catch (error) { feedback.textContent = error.message; feedback.className = 'status error'; }
 });
 function stopCamera() { scanning = false; scanGeneration++; stream?.getTracks().forEach(track => track.stop()); stream = null; video.srcObject = null; video.classList.add('hidden'); document.querySelector('#stop-camera').classList.add('hidden'); document.querySelector('#start-camera').disabled = false; }

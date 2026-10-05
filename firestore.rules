@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Private ticket data is only accessed by the authorized server (Admin SDK).
+    match /shadowfest_events/{document=**} {
+      allow read, write: if false;
+    }
+    // Fail closed for all other collections. Review if this project hosts other apps.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

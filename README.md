@@ -1,34 +1,35 @@
-# ShadowFest
+# Shadow Fest 4.0
 
-Web de un evento de terror gore y reggaetón, con catálogo de entradas, paquetes y preventa de bebidas, solicitudes al organizador y administración de accesos.
+Web de Halloween y reggaetón en Lima, +18, con compra coordinada por WhatsApp, sorpresas por ventas y sistema de entradas con vendedores. Proyecto Firebase: `comecome-ab1a0`.
 
-Estado: primera versión visual y funcional en **demostración local**. No hay venta activa ni datos reales del evento configurados.
+**Estado:** interfaz y backend preparados; vista local comprobada. Las funciones y reglas aún no están desplegadas. No operar compradores reales desde la demo local.
 
-Consulta [PLAN.md](PLAN.md) para el alcance y la dirección visual.
+## Pantallas
 
-La página pública usa ahora las referencias visuales del organizador, con textos breves y tarjetas de compra adaptadas a celular. El mapa conceptual del espacio está retirado hasta contar con una referencia fiel del local. Datos actuales: [EVENTO.md](EVENTO.md). Moneda: soles peruanos. Etapas automáticas de preventa: S/20 hasta el 11 de octubre inclusive en Lima, luego S/25; S/30 en puerta. Precio del pack y VIP pendientes. Los visuales se identifican como conceptuales.
+- `index.html`: portada y compra, sin enlaces al panel del equipo. Contador desde 110 y metas propuestas en `surprises.js`.
+- `admin.html`: acceso por código, ventas propias del vendedor o administración suprema de todas las entradas, compradores y accesos.
+- `activar.html#CODIGO`: registro único del comprador con el código entregado por su vendedor.
+- `qr.html#TOKEN`: entrada individual, sin exponer el teléfono del comprador.
+- `validar.html`: acceso del personal por código y consumo único del QR.
 
-## Las cuatro páginas
+La transferencia siempre se coordina por chat al **+51 955 121 011**. La web no procesa pagos. El vendedor confirma el pago antes de emitir. Un pack genera seis entradas individuales.
 
-- `index.html`: web pública, paquetes y solicitud de información preparada para WhatsApp.
-- `admin.html`: emisión, búsqueda, filtros, anulación y exportación de entradas de prueba.
-- `qr.html?c=UUID`: entrada individual y QR del asistente.
-- `validar.html`: pantalla exclusiva de control de acceso, con consulta, escaneo compatible y confirmación de ingreso.
+## Ejecutar y verificar
 
-## Ejecutar
+```powershell
+python -m http.server 5173 --bind 127.0.0.1
+npm test
+npm run build
+```
 
-Desde esta carpeta: `python -m http.server 5173 --bind 127.0.0.1`. Abrir `http://localhost:5173`. No abrir como `file://`: los módulos requieren servidor HTTP. `npm test` ejecuta la verificación del flujo de entradas sin instalar dependencias.
+Abrir `http://localhost:5173`. La vista local guarda datos de prueba en este navegador y usa un secreto de prueba en `.shadowfest-local.json` (no versionado). Las pruebas incluyen lógica del servidor, permisos, revocación, reintentos, registros e ingresos concurrentes. El build excluye la demo y activa la API real.
 
-Para probar: entrar a administración, emitir una entrada con pago de prueba confirmado, abrir su QR, copiar el enlace y consultarlo en validación. Confirmar ingreso y volver a consultar: debe rechazar un segundo ingreso. El escáner depende de BarcodeDetector y permisos de cámara; siempre está disponible el ingreso manual. Cámara, bloqueo y portapapeles necesitan localhost o HTTPS.
+## Firebase
 
-## Configuración y límites
+Leer [FIREBASE.md](FIREBASE.md): reglas, colecciones, acceso por códigos y comandos de despliegue. El secreto supremo se guarda en Secret Manager. Los datos son privados en Firestore y las operaciones pasan por una función que aplica permisos. Publicar únicamente `dist` mediante Firebase Hosting; GitHub Pages por sí solo no ejecuta esta API.
 
-Editar `config.js` para el evento, paquetes y número de WhatsApp en formato internacional solo con dígitos. WhatsApp del organizador: +51 955 121 011. Cada pase tiene cantidad y botón directo a su chat; no se requiere formulario ni nombre. El visitante envía el mensaje desde WhatsApp; la web no registra la solicitud ni confirma el pago por abrir el chat.
+El contador representa 110 ventas históricas + nuevas entradas emitidas y no anuladas. Los 110 compradores históricos no se inventan ni se migran automáticamente. Las metas de sorpresa 150/200/300 y sus contenidos siguen pendientes de confirmación.
 
-Arte original de portada creado con la herramienta integrada de generación de imágenes, optimizado a WebP para la web. Incluye decoración SVG de sangre ficticia y símbolos propios, pases con detalles gráficos y movimiento sutil del arte al usar el mouse. Las preferencias de reducción de movimiento desactivan estos efectos. Prompt y archivos del arte: [ARTE.md](ARTE.md).
+Datos del evento y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 11 de octubre inclusive (Lima), S/25 desde el 12 y S/30 en puerta. Precios pack/VIP pendientes. El mapa del local está retirado hasta contar con una referencia fiel.
 
-Los datos de prueba se guardan en localStorage y solo se comparten en el mismo origen y navegador. El bloqueo entre pestañas evita consumir dos veces una entrada local; no reemplaza una transacción de servidor. No hay autenticación implementada ni panel privado de producción. No usar esta demostración para compradores reales.
-
-Antes de operar: implementar un backend independiente con autenticación, roles de admin/validador, datos compartidos, verificación manual de pagos, emisión controlada, QR de token aleatorio, consulta pública limitada y transacciones atómicas para ingresos y retiro de bebidas. Nunca reutilizar las claves o la base de ZUMBA. Los paquetes y la preventa de bebidas actuales son propuestas, no productos disponibles.
-
-QR generado con qrcodejs 1.0.0, distribuido localmente bajo licencia MIT en `vendor/`. Las fuentes externas son opcionales; hay fuentes de respaldo.
+QR con qrcodejs 1.0.0 distribuido en `vendor` (MIT). El escáner usa BarcodeDetector cuando está disponible; puede pegarse el código o enlace. Cámara y portapapeles requieren localhost o HTTPS. Las fuentes externas tienen respaldo local de sistema.

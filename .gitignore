@@ -3,3 +3,7 @@ node_modules/
 .env.*
 !.env.example
 *.log
+dist/
+.firebase/
+functions/.secret.local
+.shadowfest-local.json
