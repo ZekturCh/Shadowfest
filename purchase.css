@@ -1,0 +1,47 @@
+/* Compact purchase flow; hero styles deliberately untouched. */
+.purchase-section{padding:85px 6% 55px;position:relative;background:radial-gradient(ellipse at 15% 40%,#4e10232b,transparent 60%)}
+.anchor-point{position:absolute;top:0}
+.purchase-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-bottom:38px}
+.purchase-heading h2{font-size:clamp(48px,5vw,70px);margin-bottom:0}
+.purchase-heading>p{font-size:12px;color:#b8a4ac;line-height:1.9;margin:0}
+.purchase-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.purchase-card{border:1px solid #673444;background:#160b11;overflow:hidden;display:flex;flex-direction:column;border-radius:10px;box-shadow:0 15px 45px #0004}
+.pass-art{height:155px;background:radial-gradient(ellipse at 50% 70%,#bc213549,transparent 70%),linear-gradient(145deg,#2a0b14,#12090d);position:relative;display:grid;place-items:center;border-bottom:1px solid #673444}
+.pass-art:after{content:'';position:absolute;inset:11px;border:1px solid #da587022;border-radius:4px;pointer-events:none}
+.pass-art svg{width:95px;height:95px;color:#fa6880;filter:drop-shadow(0 0 15px #ed213f33)}
+.pass-edition{position:absolute;left:23px;top:22px;font-size:8px;letter-spacing:2px;color:#b98a98}
+.pass-number{position:absolute;right:22px;bottom:17px;font:800 46px 'Barlow Condensed',sans-serif;color:#c54b663a}
+.pass-content{padding:26px;display:flex;flex-direction:column;flex:1}
+.pass-status{font-size:8px;letter-spacing:2px;color:#f37389;margin-bottom:13px}
+.pass-content h3{font:800 39px/1 'Barlow Condensed',Impact,sans-serif;letter-spacing:-.5px;margin:0 0 14px}
+.pass-price{display:grid;gap:3px;min-height:69px}
+.pass-price strong{font:800 43px/1 'Barlow Condensed',Impact,sans-serif}
+.pass-price span{font-size:11px;color:#b695a1}
+.pass-description{font-size:12px;color:#c7adb6;line-height:1.7;margin:17px 0 22px;min-height:41px}
+.pass-bottom{margin-top:auto;border-top:1px solid #633344;padding-top:20px}
+.pass-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:#cdb2bb}
+.pass-stepper{display:flex;align-items:center;border:1px solid #633344;border-radius:5px;overflow:hidden;background:#10080c}
+.pass-stepper button{border:0;background:transparent;color:#f7edf1;width:35px;height:35px;font-size:19px;cursor:pointer}
+.pass-stepper button:hover{background:#68203866}.pass-stepper button:disabled{opacity:.25;cursor:default}
+.pass-stepper output{min-width:29px;text-align:center;font-size:12px;color:#f7edf1}
+.pass-subtotal{font-size:10px;color:#bfa1ad;margin:11px 0 19px;min-height:17px}
+.pass-bottom>.button{width:100%;font-size:10px;min-height:49px;padding:14px 10px;letter-spacing:.8px}
+.pass-crew{border-color:#b83357}.pass-crew .pass-art{background:radial-gradient(ellipse at 50% 60%,#d4315449,transparent 70%),linear-gradient(145deg,#380e1e,#150a12)}
+.pass-vip{border-color:#62346c;background:#130d19}.pass-vip .pass-art{background:radial-gradient(ellipse at 50% 70%,#8123ba44,transparent 70%),linear-gradient(145deg,#260e35,#100a15);border-color:#62346c}
+.pass-vip .pass-art svg{color:#ce82eb}.pass-vip .pass-status{color:#ce82eb}.pass-vip .pass-bottom{padding-top:20px;border-color:#5e3266;min-height:146px;display:flex;align-items:flex-end}
+.pass-vip .button{background:#271333!important;border-color:#80519a!important;box-shadow:none!important}
+.sale-footnote{display:flex;justify-content:space-between;gap:20px;font-size:10px;color:#a48492;margin:23px 0 0;line-height:1.8}
+.experience-compact{padding:55px 6% 65px;border-top:1px solid #462130}
+.compact-heading{display:flex;align-items:center;gap:45px;margin-bottom:28px}.compact-heading .eyebrow{max-width:160px;line-height:1.8;margin:0}.compact-heading h2{font-size:43px;margin:0}
+.experience-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-bottom:30px}
+.experience-points>div{display:flex;align-items:center;gap:14px;padding:20px 0;border-top:1px solid #462130;border-bottom:1px solid #462130}
+.experience-points svg{flex:0 0 40px;width:40px;height:40px;color:#eb617f}
+.experience-points span{font-size:12px;font-weight:600;color:#f2dbe3}
+.experience-points strong{display:block;font-size:10px;font-weight:400;color:#aa8c9a;margin-top:7px;line-height:1.6}
+.compact-space{height:285px;clip-path:none;border-radius:10px;border-color:#663044;box-shadow:none}
+.compact-space .space-caption{bottom:23px}.compact-space .space-caption h3{font-size:45px}.compact-space .space-caption .eyebrow{font-size:8px;color:#e995a7;margin-bottom:10px}
+.visit-section{display:grid;grid-template-columns:1fr 1fr;gap:65px;padding:60px 6%;border-top:1px solid #462130;background:#0d080d}
+.visit-info h2{font-size:44px;margin-bottom:15px}.visit-info>p:not(.eyebrow){font-size:12px;color:#b498a6}.visit-info .text-link{display:inline-block;padding:12px 0;border-bottom:1px solid #ba3556;font-size:10px}
+.purchase-help details{padding:17px 0;border-bottom:1px solid #462130;font-size:12px}.purchase-help summary{cursor:pointer}.purchase-help details p{font-size:11px;color:#b498a6}.purchase-help>.button{margin-top:25px;font-size:10px}
+@media(max-width:800px){.purchase-section{padding:55px 6% 40px}.purchase-heading{display:block;margin-bottom:26px}.purchase-heading h2{font-size:48px}.purchase-heading>p{margin-top:18px;font-size:11px}.purchase-grid{grid-template-columns:1fr;gap:19px}.purchase-card{display:grid;grid-template-columns:110px 1fr}.pass-art{height:100%;min-height:320px;border-bottom:0;border-right:1px solid #673444}.pass-art svg{width:78px;height:78px}.pass-edition{left:15px;right:15px;top:20px;font-size:7px;line-height:2;letter-spacing:1px}.pass-number{font-size:36px;bottom:20px;right:20px}.pass-content{padding:23px 20px}.pass-content h3{font-size:34px}.pass-price strong{font-size:37px}.pass-price{min-height:60px}.pass-description{margin:12px 0 16px;font-size:11px;min-height:0}.pass-status{font-size:7px;letter-spacing:1.6px}.pass-bottom{padding-top:14px}.pass-vip .pass-bottom{min-height:0;padding-top:14px}.pass-vip .pass-art{border-right-color:#62346c;min-height:275px}.sale-footnote{display:block;font-size:9px}.sale-footnote span{display:block;margin-top:8px}.experience-compact{padding:40px 6%}.compact-heading{display:block}.compact-heading .eyebrow{max-width:none;margin-bottom:18px}.compact-heading h2{font-size:39px}.experience-points{grid-template-columns:1fr;gap:0}.experience-points>div{padding:17px 0;border-top:0}.experience-points>div:first-child{border-top:1px solid #462130}.compact-space{height:270px}.compact-space .space-caption h3{font-size:36px}.compact-space .space-caption{left:22px}.visit-section{grid-template-columns:1fr;gap:25px;padding:40px 6%}.visit-info h2{font-size:39px}}
+@media(max-width:380px){.purchase-card{grid-template-columns:85px 1fr}.pass-content{padding:21px 15px}.pass-art svg{width:67px;height:67px}.pass-bottom>.button{font-size:9px}.pass-edition{left:10px;right:10px}}

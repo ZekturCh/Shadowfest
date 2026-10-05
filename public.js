@@ -1,62 +1,62 @@
 import { event } from './config.js';
 import { saleStage, requestDetails } from './sales.js';
-import { whatsappUrl } from './whatsapp.js';
-const select = document.querySelector('#package-select');
-const quantity = document.querySelector('#request-quantity');
-let message = '';
+import { whatsappUrl, purchaseMessage } from './whatsapp.js';
+const views = [];
+const icons = { general:'mask', crew:'beer', vip:'mask' };
+function el(tag, className, text) { const node = document.createElement(tag); if(className) node.className=className; if(text) node.textContent=text; return node; }
 event.packages.forEach((pack, i) => {
-  const card = document.createElement('article'); card.className = 'card';
-  const number = document.createElement('span'); number.className = 'card-index'; number.textContent = `0${i + 1} / SHADOW PASS`;
-  const title = document.createElement('h3'); title.textContent = pack.name;
-  const tag = document.createElement('p'); tag.className = 'tag'; tag.textContent = pack.tag;
-  const description = document.createElement('p'); description.textContent = pack.description;
-  const price = document.createElement('p'); price.className = 'price'; price.dataset.packagePrice = pack.id;
-  const link = document.createElement('a'); link.className = 'button'; link.href = '#request'; link.textContent = pack.teaser ? 'QUIERO SABER MÁS ↗' : 'QUIERO ESTE PASE ↗';
-  link.addEventListener('click', () => { select.value = pack.id; quantity.value = 1; updateSelection(); });
-  card.append(number, title, tag, description, price, link); document.querySelector('#package-cards').append(card);
-  const option = document.createElement('option'); option.value = pack.id; option.textContent = pack.name; select.append(option);
+  const card=el('article', `purchase-card pass-${pack.id}`);
+  const art=el('div','pass-art');
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('aria-hidden','true');
+  const use=document.createElementNS('http://www.w3.org/2000/svg','use'); use.setAttribute('href',`assets/festival-icons.svg#${icons[pack.id]}`); svg.append(use);
+  art.append(svg, el('span','pass-edition','SHADOW FEST 4.0'), el('span','pass-number',`0${i+1}`));
+  const content=el('div','pass-content');
+  const status=el('span','pass-status',pack.id==='general'?'PREVENTA':pack.id==='crew'?'CON TU CREW':'REVELACIÓN PRÓXIMAMENTE');
+  const title=el('h3','',pack.name);
+  const price=el('div','pass-price');
+  const description=el('p','pass-description',pack.id==='general'?'Fiesta + sorteo de uno de los 5 baldes de chelas.':pack.id==='crew'?'6 entradas generales + un six pack de chela.':'Una experiencia que revelaremos poco a poco.');
+  const bottom=el('div','pass-bottom');
+  const action=el('a','button',pack.id==='general'?'COMPRAR ENTRADA ↗':pack.id==='crew'?'PEDIR MI PACK ↗':'CONSULTAR VIP ↗');
+  action.dataset.buy=pack.id;
+  let count=1;
+  let countLabel, subtotal;
+  let updateBounds = () => {};
+  if (!pack.teaser) {
+    const controls=el('div','pass-controls');
+    const caption=el('span','',pack.id==='crew'?'Packs de 6':'Entradas');
+    const stepper=el('div','pass-stepper');
+    const minus=el('button','', '−'); minus.type='button'; minus.setAttribute('aria-label',`Quitar ${pack.id==='crew'?'pack':'entrada'}`);
+    countLabel=el('output','', '1'); countLabel.setAttribute('aria-live','polite'); countLabel.setAttribute('aria-label',`Cantidad de ${pack.id==='crew'?'packs':'entradas'}`);
+    const plus=el('button','', '+'); plus.type='button'; plus.setAttribute('aria-label',`Añadir ${pack.id==='crew'?'pack':'entrada'}`);
+    stepper.append(minus,countLabel,plus); controls.append(caption,stepper); bottom.append(controls);
+    subtotal=el('p','pass-subtotal'); bottom.append(subtotal);
+    minus.addEventListener('click',()=>{ count=Math.max(1,count-1); refresh(); });
+    plus.addEventListener('click',()=>{ count=Math.min(20,count+1); refresh(); });
+    function bounds() { minus.disabled=count<=1; plus.disabled=count>=20; }
+    updateBounds = bounds;
+  }
+  bottom.append(action);
+  content.append(status,title,price,description,bottom); card.append(art,content); document.querySelector('#package-cards').append(card);
+  function refresh() {
+    const stage=saleStage(); const detail=requestDetails(pack,count);
+    price.replaceChildren();
+    if (pack.id==='general') { price.append(el('strong','',`S/ ${stage.price}`),el('span','', '/ persona')); }
+    else if(pack.id==='crew') { price.append(el('strong','', '6 + SIX'),el('span','', 'Consulta el precio del pack')); }
+    else { price.append(el('strong','', 'VIP'),el('span','', 'Los detalles llegan pronto')); }
+    if(countLabel) countLabel.textContent=count;
+    updateBounds();
+    if(subtotal) subtotal.textContent=pack.id==='general'?`Total referencial: S/ ${detail.total}`:`${detail.people} personas · ${count} six pack${count>1?'s':''}`;
+    action.href=whatsappUrl(event.whatsapp,purchaseMessage(detail));
+  }
+  views.push(refresh); refresh();
 });
-function hideStaleMessage() { document.querySelector('#request-summary').classList.add('hidden'); message = ''; }
-function updateSelection() {
-  hideStaleMessage(); const pack = event.packages.find(p => p.id === select.value);
-  document.querySelector('#quantity-label').textContent = pack.id === 'crew' ? 'Cantidad de packs (6 personas por pack)' : pack.id === 'vip' ? 'Personas interesadas en VIP' : 'Cantidad de entradas';
-  try { document.querySelector('#selection-detail').textContent = requestDetails(pack, Number(quantity.value)).line; }
-  catch (error) { document.querySelector('#selection-detail').textContent = error.message; }
-}
-function updatePrices() {
-  const stage = saleStage(); document.querySelector('#hero-price').textContent = stage.closed ? 'NOS VEMOS' : `S/ ${stage.price}`;
-  document.querySelector('#hero-stage').textContent = stage.label; document.querySelector('#mobile-price').textContent = stage.closed ? 'PRÓXIMAMENTE' : `S/ ${stage.price}`;
-  document.querySelector('#stage-early').classList.toggle('current-stage', !stage.closed && stage.price === 20);
-  document.querySelector('#stage-regular').classList.toggle('current-stage', !stage.closed && stage.price === 25);
-  document.querySelector('[data-package-price="general"]').textContent = stage.closed ? 'Edición finalizada' : `S/ ${stage.price} / persona`;
-  document.querySelector('[data-package-price="crew"]').textContent = '6 entradas + 1 six pack';
-  document.querySelector('[data-package-price="vip"]').textContent = 'Revelación próximamente';
-  document.querySelector('#request-form button[type="submit"]').disabled = stage.closed;
-  try { document.querySelector('#selection-detail').textContent = requestDetails(event.packages.find(p => p.id === select.value), Number(quantity.value)).line; }
-  catch (error) { document.querySelector('#selection-detail').textContent = error.message; }
-}
-select.addEventListener('change', updateSelection); quantity.addEventListener('input', updateSelection);
-document.querySelector('#request-form input[name="name"]').addEventListener('input', hideStaleMessage);
-document.querySelector('#vip-interest').addEventListener('click', () => { select.value = 'vip'; quantity.value = 1; updateSelection(); });
-document.querySelector('#request-form').addEventListener('submit', e => {
-  e.preventDefault(); const values = new FormData(e.target); const pack = event.packages.find(p => p.id === values.get('package'));
-  const status = document.querySelector('#chat-status');
-  try {
-    const detail = requestDetails(pack, Number(values.get('quantity')));
-    message = `¡Voy a Shadow Fest 4.0! Soy ${values.get('name').trim()}.\n31 de octubre · Lima\n${detail.line}\n¿Me confirmas disponibilidad${detail.total === null ? ', precio' : ''} y los datos para coordinar la transferencia?`;
-    document.querySelector('#message-preview').textContent = message; document.querySelector('#request-summary').classList.remove('hidden');
-    const chat = document.querySelector('#chat-link'); chat.classList.add('hidden'); chat.removeAttribute('href');
-    if (/^\d{8,15}$/.test(event.whatsapp)) { chat.href = whatsappUrl(event.whatsapp, message); chat.classList.remove('hidden'); status.textContent = 'Continúa en WhatsApp y envía tu mensaje al organizador.'; window.location.assign(chat.href); }
-    else status.textContent = 'Falta configurar el WhatsApp del organizador. Por ahora puedes copiar el mensaje.';
-  } catch (error) { message = ''; document.querySelector('#request-summary').classList.remove('hidden'); document.querySelector('#message-preview').textContent = ''; document.querySelector('#chat-link').classList.add('hidden'); status.textContent = error.message; }
-});
-document.querySelector('#copy-message').addEventListener('click', async () => {
-  if (!message) return;
-  try { await navigator.clipboard.writeText(message); document.querySelector('#chat-status').textContent = 'Mensaje copiado.'; }
-  catch { document.querySelector('#chat-status').textContent = 'Selecciona el mensaje y cópialo manualmente.'; }
-});
-let previousStage = saleStage().price;
-updatePrices(); setInterval(() => { const nextStage = saleStage().price; if (nextStage !== previousStage) hideStaleMessage(); previousStage = nextStage; updatePrices(); }, 60000);
+function updatePrices() { const stage=saleStage(); document.querySelector('#hero-price').textContent=`S/ ${stage.price}`; document.querySelector('#hero-stage').textContent=stage.label; document.querySelector('#mobile-price').textContent=`S/ ${stage.price}`; views.forEach(refresh=>refresh()); }
+updatePrices(); setInterval(updatePrices,60000);
+const mobileBuy = document.querySelector('.mobile-buy');
+const purchaseVisibility = new IntersectionObserver(entries => {
+  mobileBuy.classList.toggle('hidden', entries[0].isIntersecting);
+}, { threshold: 0 });
+purchaseVisibility.observe(document.querySelector('#packages'));
 const motion = matchMedia('(prefers-reduced-motion: reduce)'); const image = document.querySelector('.parallax-image'); const scene = document.querySelector('.space-window');
 let scheduled = false;
 function moveScene() {
