@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { saleStage, requestDetails } from '../sales.js';
-test('Lima early bird includes all October 11 and becomes S/25 at midnight', () => {
-  assert.equal(saleStage(new Date('2026-10-11T23:59:59-05:00')).price, 20);
-  assert.equal(saleStage(new Date('2026-10-12T00:00:00-05:00')).price, 25);
+test('Lima early bird includes all October 13 and becomes S/25 at midnight', () => {
+  assert.equal(saleStage(new Date('2026-10-13T23:59:59.999-05:00')).price, 20);
+  assert.equal(saleStage(new Date('2026-10-14T00:00:00-05:00')).price, 25);
+  assert.equal(requestDetails({id:'general'}, 3, new Date('2026-10-14T00:00:00-05:00')).total, 75);
   assert.equal(requestDetails({id:'general'}, 3, new Date('2026-10-05T12:00:00-05:00')).total, 60);
 });
 test('packs count six people each and never invent an unconfirmed pack or VIP price', () => {

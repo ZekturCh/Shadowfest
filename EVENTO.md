@@ -4,7 +4,7 @@
 
 ## General
 
-S/20 hasta el 11 de octubre inclusive, hora de Lima. S/25 desde el 12 de octubre en preventa. S/30 en puerta. Incluye acceso a la fiesta y participación en el sorteo de uno de los 5 baldes de chelas.
+S/20 hasta el 13 de octubre inclusive, hora de Lima. S/25 desde el 14 de octubre en preventa. S/30 en puerta. Incluye acceso a la fiesta y participación en el sorteo de uno de los 5 baldes de chelas.
 
 ## Pack
 

@@ -1,6 +1,6 @@
-export const earlyBirdEnds = new Date('2026-10-12T00:00:00-05:00');
+export const earlyBirdEnds = new Date('2026-10-14T00:00:00-05:00');
 export function saleStage(now = new Date()) {
-  return now < earlyBirdEnds ? { price: 20, label: 'Preventa hasta el 11 OCT', closed: false } : { price: 25, label: 'Preventa regular', closed: false };
+  return now < earlyBirdEnds ? { price: 20, label: 'Preventa hasta el 13 OCT', closed: false } : { price: 25, label: 'Preventa regular', closed: false };
 }
 export function requestDetails(pack, quantity, now = new Date()) {
   if (!pack || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) throw new Error('Elige una cantidad entre 1 y 20.');

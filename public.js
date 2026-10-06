@@ -1,5 +1,5 @@
 import { event } from './config.js?v=20261006b';
-import { saleStage, requestDetails } from './sales.js?v=20261006b';
+import { saleStage, requestDetails, earlyBirdEnds } from './sales.js?v=20261006c';
 import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261006b';
 import { request, localDemo } from './platform.js?v=20261006b';
 import { surprises, initialSold } from './surprises.js?v=20261006b';
@@ -70,7 +70,23 @@ event.packages.forEach((pack, i) => {
   views.push(refresh); refresh();
 });
 function updatePrices() { const stage=saleStage(); document.querySelector('#hero-price').textContent=`S/ ${stage.price}`; document.querySelector('#hero-stage').textContent=stage.label; document.querySelector('#mobile-price').textContent=`S/ ${stage.price}`; views.forEach(refresh=>refresh()); }
-updatePrices(); setInterval(updatePrices,60000);
+let countdownExpired;
+function updateCountdown() {
+  const remaining = Math.max(0, Math.ceil((earlyBirdEnds - new Date()) / 1000));
+  const expired = remaining === 0;
+  const values = { days: Math.floor(remaining / 86400), hours: Math.floor(remaining / 3600) % 24, minutes: Math.floor(remaining / 60) % 60, seconds: remaining % 60 };
+  for (const [unit, value] of Object.entries(values)) document.querySelector(`[data-countdown=${unit}]`).textContent = String(value).padStart(2, '0');
+  if (expired !== countdownExpired) {
+    countdownExpired = expired;
+    document.querySelector('#presale-countdown').classList.toggle('expired', expired);
+    document.querySelector('#countdown-kicker').textContent = expired ? 'PREVENTA REGULAR' : 'PREVENTA EXTENDIDA';
+    document.querySelector('#countdown-title').textContent = expired ? 'La noche sigue. Tu entrada está a S/25.' : 'El precio de S/20 se acaba en';
+    document.querySelector('#countdown-note').textContent = expired ? 'Compra por WhatsApp y asegura tu entrada.' : '13 OCT · 11:59 p. m. · hora de Lima';
+    updatePrices();
+  }
+}
+updateCountdown(); setInterval(updateCountdown,1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) updateCountdown(); });
 const mobileBuy = document.querySelector('.mobile-buy');
 const purchaseVisibility = new IntersectionObserver(entries => {
   mobileBuy.classList.toggle('hidden', entries[0].isIntersecting);
