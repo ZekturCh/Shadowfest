@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function staff() { return get(/databases/$(database)/documents/shadowfest_live/2026/staff/$(request.auth.uid)).data; }
+    function active() { return request.auth != null && staff().active == true; }
+    function supreme() { return active() && staff().role == 'supreme'; }
+    function seller() { return active() && staff().role in ['supreme', 'seller']; }
+    function door() { return active() && staff().role in ['supreme', 'validator']; }
+    function passAfter(id) { return getAfter(/databases/$(database)/documents/shadowfest_live/2026/passes/$(id)).data; }
+    function ticketAfter(id) { return getAfter(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(id)).data; }
+    function passMatches(id, t) {
+      let p = passAfter(id);
+      return p.token == id && p.status == t.status && p.packageId == t.packageId
+        && p.registered == (t.buyer != null)
+        && p.name == (t.buyer == null ? 'Sin nombre' : t.buyer.name);
+    }
+    function previousCount() {
+      return exists(/databases/$(database)/documents/shadowfest_live/2026/meta/sales)
+        ? get(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data.approved : 0;
+    }
+    function counted(id, delta) {
+      let s = getAfter(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data;
+      let p = getAfter(/databases/$(database)/documents/shadowfest_live/2026/publicStats/sales).data;
+      return s.lastTicket == id && s.approved == previousCount() + delta
+        && s.updatedAt == request.time && p.approved == s.approved && p.updatedAt == request.time;
+    }
+    function buyerName(id) {
+      let t = request.resource.data;
+      return resource.data.status in ['pending','valid'] && resource.data.buyer == null
+        && t.diff(resource.data).affectedKeys().hasOnly(['buyer'])
+        && t.buyer.keys().hasOnly(['name','source','registeredAt','consentVersion'])
+        && t.buyer.name is string && t.buyer.name.size() >= 2 && t.buyer.name.size() <= 80
+        && t.buyer.source == 'buyer' && t.buyer.registeredAt == request.time
+        && t.buyer.consentVersion == '2026-10-name-v1' && passMatches(id,t);
+    }
+    match /shadowfest_live/2026/staff/{uid} {
+      allow get: if supreme() || (request.auth != null && request.auth.uid == uid);
+      allow list: if supreme();
+      allow create: if supreme() && request.resource.data.keys().hasOnly(['name','role','active','createdAt'])
+        && request.resource.data.role in ['seller','validator'] && request.resource.data.active == true
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 60 && request.resource.data.createdAt == request.time;
+      allow update: if supreme() && resource.data.role != 'supreme'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','revokedAt'])
+        && request.resource.data.active == false && request.resource.data.revokedAt == request.time;
+    }
+    match /shadowfest_live/2026/requests/{id} {
+      allow get: if seller() && (supreme() || id.matches(request.auth.uid + '_[a-f0-9]{32}'));
+      allow create: if seller() && request.resource.data.keys().hasOnly(['sellerId','packageId','ids','createdAt'])
+        && id.matches(request.auth.uid + '_[a-f0-9]{32}') && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.packageId in ['general','crew','vip']
+        && request.resource.data.ids is list
+        && request.resource.data.ids.size() == (request.resource.data.packageId == 'crew' ? 6 : 1)
+        && request.resource.data.createdAt == request.time;
+    }
+    match /shadowfest_live/2026/tickets/{id} {
+      allow get, list: if supreme() || (active() && staff().role == 'seller' && resource.data.sellerId == request.auth.uid);
+      allow get: if door();
+      allow create: if seller() && id.matches('[a-f0-9]{64}')
+        && request.resource.data.keys().hasOnly(['token','packageId','sellerId','sellerName','status','buyer','createdAt','usedAt','requestId'])
+        && request.resource.data.token == id && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.sellerName == staff().name && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time && request.resource.data.usedAt == null
+        && request.resource.data.packageId in ['general','crew','vip']
+        && (request.resource.data.buyer == null ||
+          (request.resource.data.buyer.keys().hasOnly(['name','source']) && request.resource.data.buyer.source == 'seller'
+          && request.resource.data.buyer.name is string && request.resource.data.buyer.name.size() >= 1 && request.resource.data.buyer.name.size() <= 80))
+        && getAfter(/databases/$(database)/documents/shadowfest_live/2026/requests/$(request.resource.data.requestId)).data.sellerId == request.auth.uid
+        && getAfter(/databases/$(database)/documents/shadowfest_live/2026/requests/$(request.resource.data.requestId)).data.packageId == request.resource.data.packageId
+        && id in getAfter(/databases/$(database)/documents/shadowfest_live/2026/requests/$(request.resource.data.requestId)).data.ids
+        && passMatches(id,request.resource.data);
+      allow update: if buyerName(id);
+      allow update: if seller() && resource.data.sellerId == request.auth.uid && resource.data.status == 'pending'
+        && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sentAt'])
+             && !('sentAt' in resource.data) && request.resource.data.sentAt == request.time)
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approvalRequestedAt','approvalRequestedBy'])
+             && !('approvalRequestedAt' in resource.data) && request.resource.data.approvalRequestedAt == request.time
+             && request.resource.data.approvalRequestedBy == request.auth.uid));
+      allow update: if supreme() && passMatches(id,request.resource.data)
+        && ((resource.data.status == 'pending' && request.resource.data.status == 'valid'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','approvedAt','approvedBy'])
+          && request.resource.data.approvedAt == request.time && request.resource.data.approvedBy == request.auth.uid && counted(id,1))
+        || (resource.data.status in ['pending','valid'] && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelledAt','cancelledBy'])
+          && request.resource.data.cancelledAt == request.time && request.resource.data.cancelledBy == request.auth.uid
+          && (resource.data.status == 'pending' || counted(id,-1))));
+      allow update: if door() && resource.data.status == 'valid' && request.resource.data.status == 'used'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','usedAt','validatedBy'])
+        && request.resource.data.usedAt == request.time && request.resource.data.validatedBy == request.auth.uid
+        && passMatches(id,request.resource.data);
+    }
+    match /shadowfest_live/2026/passes/{id} {
+      allow get: if id.matches('[a-f0-9]{64}');
+      allow create: if seller() && request.resource.data.keys().hasOnly(['name','packageId','status','registered','token'])
+        && ticketAfter(id).sellerId == request.auth.uid && ticketAfter(id).createdAt == request.time
+        && passMatches(id,ticketAfter(id));
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','registered','status'])
+        && passMatches(id,ticketAfter(id))
+        && ((resource.data.registered == false && request.resource.data.registered == true
+          && ticketAfter(id).buyer.source == 'buyer' && ticketAfter(id).buyer.registeredAt == request.time)
+          || (supreme() && request.resource.data.status in ['valid','cancelled'])
+          || (door() && resource.data.status == 'valid' && request.resource.data.status == 'used'));
+    }
+    match /shadowfest_live/2026/meta/sales {
+      allow get: if supreme();
+      allow create, update: if supreme() && request.resource.data.keys().hasOnly(['approved','initialSold','lastTicket','updatedAt'])
+        && request.resource.data.initialSold == 110 && request.resource.data.approved is int && request.resource.data.approved >= 0
+        && request.resource.data.updatedAt == request.time
+        && ((get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.lastTicket)).data.status == 'pending'
+          && ticketAfter(request.resource.data.lastTicket).status == 'valid' && request.resource.data.approved == previousCount()+1)
+        || (get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.lastTicket)).data.status == 'valid'
+          && ticketAfter(request.resource.data.lastTicket).status == 'cancelled' && request.resource.data.approved == previousCount()-1));
+    }
+    match /shadowfest_live/2026/publicStats/sales {
+      allow get: if true;
+      allow create, update: if supreme() && request.resource.data.keys().hasOnly(['approved','initialSold','updatedAt'])
+        && request.resource.data.initialSold == 110 && request.resource.data.updatedAt == request.time
+        && request.resource.data.approved == getAfter(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data.approved
+        && getAfter(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data.updatedAt == request.time;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

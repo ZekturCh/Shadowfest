@@ -1,13 +1,11 @@
-import { localDemo, apiEndpoint } from './runtime.js';
+import { localDemo } from './runtime.js';
 export { localDemo };
 const sessionKey = 'shadowfest-session-v2';
 let token = sessionStorage.getItem(sessionKey) || '';
 export async function request(action, data = {}) {
   if (localDemo) { const { demoRequest } = await import('./platform-demo.js'); return demoRequest(action, data, token); }
-  const response = await fetch(apiEndpoint, { method: 'POST', cache: 'no-store', headers: { 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) }, body:JSON.stringify({ action, ...data }) });
-  let result; try { result = await response.json(); } catch { throw new Error('El servicio de entradas todavía no está conectado.'); }
-  if (!response.ok) throw new Error(result.error || 'No se pudo completar la operación.');
-  return result;
+  const { firebaseRequest } = await import('./platform-firebase.js');
+  return firebaseRequest(action, data);
 }
 export async function login(code) { const result = await request('login', { code }); token = result.token; sessionStorage.setItem(sessionKey, token); return result.actor; }
 export async function logout() { try { await request('logout'); } finally { token=''; sessionStorage.removeItem(sessionKey); location.reload(); } }
