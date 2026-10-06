@@ -2,7 +2,7 @@
 
 Web de Halloween y reggaetón en Lima, +18, con compra coordinada por WhatsApp, sorpresas por ventas y sistema de entradas con vendedores. Proyecto Firebase: `comecome-ab1a0`.
 
-**Estado:** interfaz y backend preparados; vista local comprobada. Las funciones y reglas aún no están desplegadas. No operar compradores reales desde la demo local.
+**Estado:** panel y flujo comprobados en vista local. Las reglas de bloqueo ya fueron publicadas por el propietario. La conexión operativa sigue pendiente: se acordó migrar a Firestore y autenticación interna con interfaz por códigos, sin Cloud Functions ni plan Blaze. El backend antiguo permanece como referencia; no operar compradores reales desde la demo.
 
 ## Pantallas
 
@@ -12,7 +12,7 @@ Web de Halloween y reggaetón en Lima, +18, con compra coordinada por WhatsApp, 
 - `qr.html#TOKEN`: entrada individual, sin exponer el teléfono del comprador.
 - `validar.html`: acceso del personal por código y consumo único del QR.
 
-La transferencia siempre se coordina por chat al **+51 955 121 011**. La web no procesa pagos. El vendedor confirma el pago antes de emitir. Un pack genera seis entradas individuales.
+La transferencia siempre se coordina por chat al **+51 955 121 011**. La web no procesa pagos. El vendedor genera un QR pendiente; el único administrador aprueba o invalida la venta después de verificarla por interno. El nombre del comprador es opcional. Un pack genera seis entradas individuales.
 
 ## Ejecutar y verificar
 
@@ -26,10 +26,14 @@ Abrir `http://localhost:5173`. La vista local guarda datos de prueba en este nav
 
 ## Firebase
 
-Leer [FIREBASE.md](FIREBASE.md): reglas, colecciones, acceso por códigos y comandos de despliegue. El secreto supremo se guarda en Secret Manager. Los datos son privados en Firestore y las operaciones pasan por una función que aplica permisos. Publicar únicamente `dist` mediante Firebase Hosting; GitHub Pages por sí solo no ejecuta esta API.
+Leer [FIREBASE.md](FIREBASE.md): reglas, colecciones, acceso por códigos y comandos de despliegue. La implementación antigua usa una función y Secret Manager. Su sustitución gratuita todavía está pendiente; GitHub Pages por sí solo no ejecuta esa API.
 
-El contador representa 110 ventas históricas + nuevas entradas emitidas y no anuladas. Los 110 compradores históricos no se inventan ni se migran automáticamente. Las metas de sorpresa 150/200/300 y sus contenidos siguen pendientes de confirmación.
+El contador representa 110 ventas históricas + nuevas entradas aprobadas (incluidas las utilizadas). Los 110 compradores históricos no se inventan ni se migran automáticamente. Las metas de sorpresa 150/200/300 y sus contenidos siguen pendientes de confirmación.
 
 Datos del evento y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 11 de octubre inclusive (Lima), S/25 desde el 12 y S/30 en puerta. Precios pack/VIP pendientes. El mapa del local está retirado hasta contar con una referencia fiel.
 
 QR con qrcodejs 1.0.0 distribuido en `vendor` (MIT). El escáner usa BarcodeDetector cuando está disponible; puede pegarse el código o enlace. Cámara y portapapeles requieren localhost o HTTPS. Las fuentes externas tienen respaldo local de sistema.
+
+## Equipo
+
+El administrador puede crear individualmente vendedores y personal de puerta, generar códigos aleatorios y revocar accesos. Un botón prepara Angélica, Jesús, Diego, Lucía, Sebastián y César sin duplicar nombres existentes. Los códigos nuevos se muestran hasta recargar; deben entregarse por privado. El panel resume QR generados, pendientes, ventas aprobadas e invalidados por vendedor.

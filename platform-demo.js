@@ -3,13 +3,13 @@ const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});
 function read(){return JSON.parse(localStorage.getItem(key)||'null')||initial();}
-function publicTicket(t){return {id:t.id,name:t.buyer?.name||'Pendiente de registro',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token};}
+function publicTicket(t){return {id:t.id,name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token};}
 export async function demoRequest(action,data,token){
   const localSecret=action==='login'?(await (await fetch('.shadowfest-local.json',{cache:'no-store'})).json()).supremeCode:null;
   return navigator.locks.request(key,()=>{
     const state=read();
     const save=()=>localStorage.setItem(key,JSON.stringify(state));
-    if(action==='stats') return {sold:initialSold+state.tickets.filter(t=>t.status!=='cancelled').length,initialSold};
+    if(action==='stats') return {sold:initialSold+state.tickets.filter(t=>['valid','used'].includes(t.status)).length,initialSold};
     if(action==='login') {
       // Only served on localhost; production never imports this module.
       const access=data.code===localSecret?{id:'supreme',name:'Organizador supremo',role:'supreme',active:true}:state.accesses.find(a=>a.code===data.code&&a.active);
@@ -34,14 +34,15 @@ export async function demoRequest(action,data,token){
     if(action==='accessRevoke'){supreme();const a=state.accesses.find(a=>a.id===data.id);if(!a)throw new Error('Acceso no encontrado.');a.active=false;save();return {};}
     if(action==='list'){if(actor.role==='validator')throw new Error('Acceso solo de validación.');return state.tickets.filter(t=>actor.role==='supreme'||t.sellerId===actor.id);}
     if(action==='issue'){
-      if(!['seller','supreme'].includes(actor.role)||!data.paymentConfirmed||!['general','crew','vip'].includes(data.packageId))throw new Error('Confirma el pago y el paquete.');
+      if(!['seller','supreme'].includes(actor.role)||!['general','crew','vip'].includes(data.packageId))throw new Error('Selecciona un paquete válido.');
       if(!/^[a-f0-9]{32}$/.test(data.requestId||''))throw new Error('Solicitud inválida.');
       const previous=state.tickets.filter(t=>t.requestId===data.requestId&&t.sellerId===actor.id);if(previous.length)return previous;
-      const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'valid',buyer:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return tickets;
+      const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:data.name?.trim()?{name:data.name.trim().slice(0,80)}:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return tickets;
     }
-    const t=state.tickets.find(t=>action==='cancel'?t.id===data.id:t.token===data.code);if(!t)throw new Error('Entrada no encontrada.');
-    if(action==='cancel'){if(actor.role!=='supreme')throw new Error('Solo el organizador puede anular.');if(t.status!=='valid')throw new Error('Solo se anulan entradas válidas.');t.status='cancelled';save();return {};}
-    if(action==='lookup'||action==='validate'){if(!['supreme','validator'].includes(actor.role))throw new Error('No tienes permiso de validación.');if(action==='validate'){if(t.status!=='valid'||!t.buyer)throw new Error('QR utilizado, anulado o pendiente de registro.');t.status='used';t.usedAt=new Date().toISOString();t.validatedBy=actor.id;save();}return publicTicket(t);}
+    const t=state.tickets.find(t=>['approve','cancel'].includes(action)?t.id===data.id:t.token===data.code);if(!t)throw new Error('Entrada no encontrada.');
+    if(action==='approve'){supreme();if(t.status!=='pending')throw new Error('Solo se aprueban entradas pendientes.');t.status='valid';t.approvedAt=new Date().toISOString();save();return {};}
+    if(action==='cancel'){if(actor.role!=='supreme')throw new Error('Solo el organizador puede anular.');if(!['pending','valid'].includes(t.status))throw new Error('Solo se invalidan entradas pendientes o aprobadas.');t.status='cancelled';save();return {};}
+    if(action==='lookup'||action==='validate'){if(!['supreme','validator'].includes(actor.role))throw new Error('No tienes permiso de validación.');if(action==='validate'){if(t.status!=='valid')throw new Error('QR utilizado, invalidado o pendiente de aprobación.');t.status='used';t.usedAt=new Date().toISOString();t.validatedBy=actor.id;save();}return publicTicket(t);}
     throw new Error('Operación no disponible.');
   });
 }

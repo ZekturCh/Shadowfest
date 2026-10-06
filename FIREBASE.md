@@ -2,7 +2,9 @@
 
 Proyecto configurado: `comecome-ab1a0`. Base elegida: **Cloud Firestore (default)**. No se usa Realtime Database ni Analytics.
 
-## Arquitectura
+> **Plan vigente:** usar Spark gratuito, Firestore y autenticación interna con pantalla por códigos. La migración aún no está implementada. Las secciones de arquitectura y despliegue siguientes documentan el backend anterior; no activar Blaze ni desplegarlo como requisito del plan actual. Las reglas de bloqueo publicadas protegen la base, pero no conectan todavía el panel.
+
+## Arquitectura anterior
 
 La web llama a `/api`, que Firebase Hosting redirige a `shadowfestApi`. La función comprueba códigos, sesiones y permisos y usa Firebase Admin SDK. Las reglas de Firestore rechazan toda lectura y escritura directa del navegador. Admin SDK opera con la cuenta de servicio de la función y no depende de estas reglas; la autorización efectiva está en `functions/service.js`.
 
@@ -46,15 +48,15 @@ En la consola, la pestaña **Firestore → Reglas** permite pegar el contenido d
 
 ## Flujo y contador
 
-1. El organizador crea un acceso de vendedor o validador en `admin.html`.
-2. El vendedor entra por código, confirma manualmente el pago y genera una entrada o 6 para un pack.
-3. Entrega cada enlace `activar.html#CODIGO` y su código al comprador.
-4. El comprador ingresa el código, registra nombre y celular, confirma +18 y uso de sus datos, y abre `qr.html#TOKEN`.
-5. El personal consulta y confirma en `validar.html`. Firestore consume la entrada en una transacción; un segundo ingreso se rechaza.
+1. El único administrador crea vendedores y personal de puerta en `admin.html`. Puede preparar los seis vendedores iniciales sin duplicarlos.
+2. El vendedor genera entradas pendientes y asignadas a su identidad; el nombre es opcional. Un pack genera seis QR individuales.
+3. Entrega el enlace `qr.html#TOKEN` por privado. El QR pendiente se muestra, pero no permite ingresar.
+4. El administrador comprueba la venta manualmente y aprueba o invalida cada entrada.
+5. En puerta solo se consumen entradas aprobadas, una vez, mediante transacción.
 
 Los enlaces llevan secretos en el fragmento `#`, que no viaja en las peticiones de archivos ni en referencias HTTP. Los datos del comprador se guardan solo una vez y la consulta pública del QR no devuelve el teléfono. Quien tenga el enlace/código de registro puede recuperar el QR; por eso debe entregarse de forma privada.
 
-El contador empieza en **110 ventas históricas**, sin inventar datos ni QR para esas personas. Cada nueva entrada emitida con pago confirmado suma 1, un pack suma 6, una anulación resta 1 y el ingreso no descuenta. El registro del comprador no vuelve a sumar. La portada consulta el contador cada 15 segundos y el panel cada 30 segundos cuando está visible. Si se migran los 110 QR históricos después, deben marcarse e importarse sin incrementar nuevamente este contador.
+El contador empieza en **110 ventas históricas**, sin inventar datos ni QR para esas personas. Cada aprobación suma 1, aprobar las seis entradas de un pack suma 6 y una invalidación resta 1 solo si la entrada estaba aprobada y el ingreso no descuenta. El registro del comprador no vuelve a sumar. La portada consulta el contador cada 15 segundos y el panel cada 30 segundos cuando está visible. Si se migran los 110 QR históricos después, deben marcarse e importarse sin incrementar nuevamente este contador.
 
 Metas 150, 200 y 300 son una propuesta de vista previa. Editar `surprises.js` con las metas y contenidos confirmados antes de publicar. Los textos de revelación están en archivos públicos; para sorpresas verdaderamente secretas mover el contenido al servidor antes de publicar.
 

@@ -10,7 +10,7 @@ async function lookup(value) {
   try {
     const code = extractCode(value); const ticket = await request('lookup', { code });
     if (generation !== lookupGeneration) return;
-    if (!ticket.registered) throw new Error('Comprador pendiente de registro. No autorizar ingreso.');
+    if (ticket.status === 'pending') throw new Error('Pendiente de aprobación del admin. No autorizar ingreso.');
     document.querySelector('#scan-name').textContent = ticket.name; document.querySelector('#scan-package').textContent = event.packages.find(p => p.id === ticket.packageId)?.name || '';
     if (ticket.status === 'used') throw new Error('QR ya utilizado. No autorizar ingreso.');
     if (ticket.status !== 'valid') throw new Error('Entrada anulada. No autorizar ingreso.');

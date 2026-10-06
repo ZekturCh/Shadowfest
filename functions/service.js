@@ -3,7 +3,7 @@ export const hash=value=>createHash('sha256').update(value).digest('hex');
 const random=bytes=>randomBytes(bytes).toString('hex');
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e;};
 const assert=(condition,message,status)=>{if(!condition)fail(message,status);};
-const publicTicket=t=>({name:t.buyer?.name||'Pendiente de registro',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token});
+const publicTicket=t=>({name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token});
 export function createService(db,supremeSecret){
   // Dedicated namespace: existing collections in this project are not touched.
   const root=db.collection('shadowfest_events').doc('2026');
@@ -58,21 +58,24 @@ export function createService(db,supremeSecret){
     if(action==='accessRevoke'){allow(actor,['supreme']);assert(/^[a-f0-9]{64}$/.test(data.id||''),'Acceso inválido.');await collection('accesses').doc(data.id).update({active:false,revokedAt:now()});return {};}
     if(action==='list'){allow(actor,['supreme','seller']);let query=collection('tickets');if(actor.role==='seller')query=query.where('sellerId','==',actor.id);return (await query.get()).docs.map(s=>({id:s.id,...s.data()})).sort((a,b)=>a.createdAt.localeCompare(b.createdAt));}
     if(action==='issue'){
-      allow(actor,['supreme','seller']);assert(data.paymentConfirmed===true&&['general','crew','vip'].includes(data.packageId),'Confirma el pago y el paquete.');assert(/^[a-f0-9]{32}$/.test(data.requestId||''),'Solicitud inválida.');
+      allow(actor,['supreme','seller']);assert(['general','crew','vip'].includes(data.packageId),'Selecciona un paquete válido.');assert(/^[a-f0-9]{32}$/.test(data.requestId||''),'Solicitud inválida.');
       await rateLimit(actor.id,'issue');
       const requestRef=collection('issue_requests').doc(hash(`${actor.id}:${data.requestId}`));
-      const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'valid',buyer:null,createdAt:now(),usedAt:null}));
+      const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:typeof data.name==='string'&&data.name.trim()?{name:data.name.trim().slice(0,80)}:null,createdAt:now(),usedAt:null}));
       return db.runTransaction(async tx=>{const prev=await tx.get(requestRef);if(prev.exists){assert(prev.data().packageId===data.packageId,'Solicitud reutilizada con otro paquete.');const snaps=await Promise.all(prev.data().ids.map(id=>tx.get(collection('tickets').doc(id))));return snaps.map(s=>({id:s.id,...s.data()}));}
-        const stats=await tx.get(statsRef);tickets.forEach(({id,...t})=>{tx.create(collection('tickets').doc(id),t);tx.create(collection('tokens').doc(hash(t.token)),{ticketId:id});tx.create(collection('claims').doc(hash(t.claimCode)),{ticketId:id});});tx.set(statsRef,{issued:(stats.exists?stats.data().issued:0)+tickets.length,initialSold:110,updatedAt:now()});tx.create(requestRef,{ids:tickets.map(t=>t.id),packageId:data.packageId,sellerId:actor.id,createdAt:now()});return tickets;});
+        const stats=await tx.get(statsRef);tickets.forEach(({id,...t})=>{tx.create(collection('tickets').doc(id),t);tx.create(collection('tokens').doc(hash(t.token)),{ticketId:id});tx.create(collection('claims').doc(hash(t.claimCode)),{ticketId:id});});tx.create(requestRef,{ids:tickets.map(t=>t.id),packageId:data.packageId,sellerId:actor.id,createdAt:now()});return tickets;});
     }
-    if(action==='cancel'){
+    if(action==='approve'||action==='cancel'){
       allow(actor,['supreme']);assert(/^[a-f0-9]{32}$/.test(data.id||''),'Entrada inválida.');const ref=collection('tickets').doc(data.id);
-      await db.runTransaction(async tx=>{const snap=await tx.get(ref),stats=await tx.get(statsRef);assert(snap.exists&&snap.data().status==='valid','Solo se anulan entradas válidas.');tx.update(ref,{status:'cancelled',cancelledAt:now(),cancelledBy:actor.id});tx.set(statsRef,{issued:Math.max(0,(stats.exists?stats.data().issued:0)-1),initialSold:110,updatedAt:now()});});return {};
+      await db.runTransaction(async tx=>{const snap=await tx.get(ref),stats=await tx.get(statsRef);assert(snap.exists,'Entrada no encontrada.');const current=snap.data();
+        if(action==='approve'){assert(current.status==='pending','Solo se aprueban entradas pendientes.');tx.update(ref,{status:'valid',approvedAt:now(),approvedBy:actor.id});tx.set(statsRef,{issued:(stats.exists?stats.data().issued:0)+1,initialSold:110,updatedAt:now()});}
+        else {assert(['pending','valid'].includes(current.status),'Solo se invalidan entradas pendientes o aprobadas.');tx.update(ref,{status:'cancelled',cancelledAt:now(),cancelledBy:actor.id});if(current.status==='valid')tx.set(statsRef,{issued:Math.max(0,(stats.exists?stats.data().issued:0)-1),initialSold:110,updatedAt:now()});}
+      });return {};
     }
     if(action==='lookup'||action==='validate'){
       allow(actor,['supreme','validator']);const {ref,ticket}=await findTicket(data.code);
       if(action==='lookup')return publicTicket(ticket);
-      return db.runTransaction(async tx=>{const current=(await tx.get(ref)).data();assert(current.status==='valid'&&current.buyer,'QR utilizado, anulado o pendiente de registro.',409);tx.update(ref,{status:'used',usedAt:now(),validatedBy:actor.id});return {status:'used'};});
+      return db.runTransaction(async tx=>{const current=(await tx.get(ref)).data();assert(current.status==='valid','QR utilizado, invalidado o pendiente de aprobación.',409);tx.update(ref,{status:'used',usedAt:now(),validatedBy:actor.id});return {status:'used'};});
     }
     fail('Operación no disponible.',404);
   };
