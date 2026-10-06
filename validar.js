@@ -1,48 +1,18 @@
-import { event } from './config.js';
-import { request, extractCode } from './platform.js';
-import { setupAccess } from './access.js';
+import { event } from './config.js?v=20261006b';
+import { request, extractCode } from './platform.js?v=20261006b';
+import { setupAccess } from './access.js?v=20261006b';
+import { withBusy } from './busy.js?v=20261006b';
+import QrScanner from './vendor/qr-scanner.min.js?v=20261006b';
 setupAccess(['supreme','validator'],async()=>{});
-let currentCode = '', stream = null, scanning = false, scanGeneration = 0, lookupGeneration = 0;
-const video = document.querySelector('#scanner-video'); const scanStatus = document.querySelector('#scan-status'); const feedback = document.querySelector('#validation-status'); const confirmButton = document.querySelector('#confirm-entry');
-async function lookup(value) {
-  const generation = ++lookupGeneration;
-  currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.remove('hidden'); document.querySelector('#scan-name').textContent = ''; document.querySelector('#scan-package').textContent = '';
-  try {
-    const code = extractCode(value); const ticket = await request('lookup', { code });
-    if (generation !== lookupGeneration) return;
-    if (ticket.status === 'pending') throw new Error('Pendiente de aprobación del admin. No autorizar ingreso.');
-    document.querySelector('#scan-name').textContent = ticket.name; document.querySelector('#scan-package').textContent = event.packages.find(p => p.id === ticket.packageId)?.name || '';
-    if (ticket.status === 'used') throw new Error('QR ya utilizado. No autorizar ingreso.');
-    if (ticket.status !== 'valid') throw new Error('Entrada anulada. No autorizar ingreso.');
-    currentCode = code; confirmButton.disabled = false; feedback.textContent = 'Entrada válida. Confirma para registrar el ingreso.'; feedback.className = 'status valid';
-  } catch (error) { if (generation !== lookupGeneration) return; feedback.textContent = error.message; feedback.className = 'status error'; }
-}
-document.querySelector('#lookup-form').addEventListener('submit', e => { e.preventDefault(); stopCamera(); lookup(document.querySelector('#code-input').value); });
-document.querySelector('#code-input').addEventListener('input', () => { lookupGeneration++; currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.add('hidden'); });
-confirmButton.addEventListener('click', async () => {
-  if (!currentCode) return; const code = currentCode; currentCode = ''; confirmButton.disabled = true;
-  try { await request('validate',{code}); feedback.textContent = 'INGRESO REGISTRADO. Entrada consumida; no permite un segundo acceso.'; feedback.className = 'status valid'; }
-  catch (error) { feedback.textContent = error.message; feedback.className = 'status error'; }
-});
-function stopCamera() { scanning = false; scanGeneration++; stream?.getTracks().forEach(track => track.stop()); stream = null; video.srcObject = null; video.classList.add('hidden'); document.querySelector('#stop-camera').classList.add('hidden'); document.querySelector('#start-camera').disabled = false; }
-document.querySelector('#stop-camera').addEventListener('click', stopCamera);
-document.querySelector('#start-camera').addEventListener('click', async () => {
-  stopCamera(); currentCode = ''; confirmButton.disabled = true; document.querySelector('#scan-result').classList.add('hidden');
-  const generation = scanGeneration; document.querySelector('#start-camera').disabled = true;
-  try {
-    if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) throw new Error('Este navegador no admite escaneo QR por cámara. Pega el enlace o código para validar.');
-    const formats = await window.BarcodeDetector.getSupportedFormats(); if (!formats.includes('qr_code')) throw new Error('No hay lector QR disponible. Usa el código manual.');
-    const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-    const camera = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    if (generation !== scanGeneration) { camera.getTracks().forEach(track => track.stop()); return; }
-    stream = camera; video.srcObject = stream; video.classList.remove('hidden'); await video.play(); scanning = true; document.querySelector('#stop-camera').classList.remove('hidden'); scanStatus.textContent = 'Apunta al QR de la entrada.';
-    async function scan() {
-      if (!scanning || generation !== scanGeneration) return;
-      try { const results = await detector.detect(video); if (results.length) { const value = results[0].rawValue; stopCamera(); document.querySelector('#code-input').value = value; lookup(value); scanStatus.textContent = 'QR leído. Revisa el resultado antes de confirmar.'; return; } }
-      catch { stopCamera(); scanStatus.textContent = 'No se pudo leer la cámara. Usa el código manual.'; return; }
-      if (scanning) setTimeout(scan, 250);
-    } scan();
-  } catch (error) { stopCamera(); scanStatus.textContent = error.message; }
-});
-window.addEventListener('pagehide', stopCamera); document.addEventListener('visibilitychange', () => { if (document.hidden) stopCamera(); });
-window.addEventListener('storage', () => { if (currentCode) lookup(currentCode); });
+let currentCode='',scanner=null,scanGeneration=0,lookupGeneration=0;
+const video=document.querySelector('#scanner-video'),scanStatus=document.querySelector('#scan-status'),feedback=document.querySelector('#validation-status'),confirmButton=document.querySelector('#confirm-entry'),lookupButton=document.querySelector('#lookup-form button'),startButton=document.querySelector('#start-camera');
+async function lookup(value){const generation=++lookupGeneration;currentCode='';confirmButton.disabled=true;document.querySelector('#scan-result').classList.remove('hidden');document.querySelector('#scan-name').textContent='Consultando…';document.querySelector('#scan-package').textContent='';feedback.textContent='Verificando la entrada en Firebase…';try{const code=extractCode(value),ticket=await request('lookup',{code});if(generation!==lookupGeneration)return;document.querySelector('#scan-name').textContent=ticket.name;document.querySelector('#scan-package').textContent=`${event.packages.find(p=>p.id===ticket.packageId)?.name||''} · ${ticket.shortCode||'QR anterior'}`;if(ticket.status==='pending')throw new Error('Pendiente de aprobación del admin. No autorizar ingreso.');if(ticket.status==='used')throw new Error('QR ya utilizado. No autorizar ingreso.');if(ticket.status!=='valid')throw new Error('Entrada invalidada. No autorizar ingreso.');currentCode=ticket.token;confirmButton.disabled=false;feedback.textContent='Entrada aprobada. Confirma cuando el asistente esté en puerta.';feedback.className='status valid';}catch(e){if(generation!==lookupGeneration)return;if(document.querySelector('#scan-name').textContent==='Consultando…')document.querySelector('#scan-name').textContent='Entrada no disponible';feedback.textContent=e.message;feedback.className='status error';}}
+async function consult(value){stopCamera();return withBusy(lookupButton,'Consultando…',()=>lookup(value),'lookup');}
+document.querySelector('#lookup-form').onsubmit=e=>{e.preventDefault();consult(document.querySelector('#code-input').value);};
+document.querySelector('#code-input').oninput=()=>{lookupGeneration++;currentCode='';confirmButton.disabled=true;document.querySelector('#scan-result').classList.add('hidden');};
+confirmButton.onclick=()=>{if(!currentCode)return;const code=currentCode;return withBusy(confirmButton,'Registrando ingreso…',async()=>{currentCode='';try{await request('validate',{code});feedback.textContent='INGRESO REGISTRADO. No permite un segundo acceso.';feedback.className='status valid';document.querySelector('#code-input').value='';}catch(e){feedback.textContent=e.message;feedback.className='status error';}},'admit').finally(()=>{confirmButton.disabled=true;});};
+function stopCamera(){scanGeneration++;scanner?.destroy();scanner=null;video.classList.add('hidden');document.querySelector('#stop-camera').classList.add('hidden');startButton.disabled=false;}
+document.querySelector('#stop-camera').onclick=stopCamera;
+startButton.onclick=()=>withBusy(startButton,'Abriendo cámara…',async()=>{stopCamera();startButton.disabled=true;lookupGeneration++;currentCode='';confirmButton.disabled=true;document.querySelector('#scan-result').classList.add('hidden');const generation=scanGeneration;try{if(!navigator.mediaDevices?.getUserMedia)throw new Error('Abre esta página en Safari o Chrome y permite el uso de cámara. También puedes usar una foto o el código de 6 caracteres.');video.classList.remove('hidden');scanner=new QrScanner(video,result=>{if(generation!==scanGeneration)return;const value=result.data;document.querySelector('#code-input').value=value;scanStatus.textContent='QR leído. Consultando entrada…';consult(value);},{preferredCamera:'environment',maxScansPerSecond:8,returnDetailedScanResult:true});await scanner.start();if(generation!==scanGeneration)return;document.querySelector('#stop-camera').classList.remove('hidden');scanStatus.textContent='Apunta al QR. Revisa el resultado antes de confirmar.';}catch(e){stopCamera();scanStatus.textContent=e.name==='NotAllowedError'?'Permite la cámara en los ajustes del navegador, o usa una foto/código manual.':e.message||String(e);}},'camera').finally(()=>{startButton.disabled=!!scanner;});
+document.querySelector('#qr-photo').onchange=e=>{const file=e.target.files?.[0];if(!file)return;return withBusy(document.querySelector('#photo-label'),'Leyendo foto…',async()=>{stopCamera();try{const result=await QrScanner.scanImage(file,{returnDetailedScanResult:true});document.querySelector('#code-input').value=result.data;await consult(result.data);scanStatus.textContent='QR leído desde la foto.';}catch{scanStatus.textContent='No se encontró un QR legible en la imagen. Usa otra foto o escribe los 6 caracteres.';}finally{e.target.value='';}},'photo');};
+window.addEventListener('pagehide',stopCamera);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCamera();});

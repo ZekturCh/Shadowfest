@@ -1,6 +1,7 @@
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, getDocs, query, where, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { newShortCode, shortCodePattern, ticketQuantity } from '../ticket-code.js';
 
 export const firebaseConfig={apiKey:'AIzaSyCL4RyZwSHQighzQ61qbaGfK9jCiIfB30U',authDomain:'comecome-ab1a0.firebaseapp.com',projectId:'comecome-ab1a0',storageBucket:'comecome-ab1a0.firebasestorage.app',messagingSenderId:'399645583727',appId:'1:399645583727:web:2e777325eaa14ed559a09a'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -12,7 +13,8 @@ export async function codeEmail(code){const bytes=await crypto.subtle.digest('SH
 function plain(value){if(value?.toDate)return value.toDate().toISOString();if(Array.isArray(value))return value.map(plain);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,plain(v)]));return value;}
 async function actor(){await ready;await auth.authStateReady();requireValue(auth.currentUser,'Ingresa tu código de acceso.');const snap=await getDoc(ref('staff',auth.currentUser.uid));requireValue(snap.exists()&&snap.data().active,'Código sin permiso o revocado.');return {id:snap.id,...plain(snap.data())};}
 function allow(a,roles){requireValue(roles.includes(a.role),'No tienes permiso para esta operación.');}
-const publicData=t=>({name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer?.name,token:t.token});
+const publicData=t=>({name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer?.name,token:t.token,shortCode:t.shortCode});
+async function resolveCode(code){if(shortCodePattern.test(code||'')){const snap=await getDoc(ref('codes',code));requireValue(snap.exists(),'Código de entrada no encontrado.');return snap.data().token;}requireValue(/^[a-f0-9]{64}$/.test(code||''),'Código QR inválido.');return code;}
 async function publicTicket(code){requireValue(/^[a-f0-9]{64}$/.test(code||''),'Código QR inválido.');const snap=await getDoc(ref('passes',code));requireValue(snap.exists(),'Entrada no encontrada.');return {id:code,...plain(snap.data())};}
 async function execute(action,data){
   if(action==='login'){await ready;await signInWithEmailAndPassword(auth,await codeEmail(data.code),data.code);return {actor:await actor(),token:'firebase-session'};}
@@ -37,10 +39,16 @@ async function execute(action,data){
   if(action==='list'){allow(a,['supreme','seller']);const q=a.role==='seller'?query(coll('tickets'),where('sellerId','==',a.id)):coll('tickets');return (await getDocs(q)).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
   if(action==='issue'){
     allow(a,['supreme','seller']);requireValue(['general','crew','vip'].includes(data.packageId)&&/^[a-f0-9]{32}$/.test(data.requestId||''),'Solicitud o paquete inválido.');
-    const requestRef=ref('requests',a.id+'_'+data.requestId),ids=Array.from({length:data.packageId==='crew'?6:1},()=>random(32));
+    const quantity=ticketQuantity(data.packageId,data.quantity),baseRequest=a.id+'_'+data.requestId;
     const name=String(data.name||'').trim();requireValue(name.length<=80,'Nombre demasiado largo.');
-    await runTransaction(db,async tx=>{const previous=await tx.get(requestRef);if(previous.exists()){requireValue(previous.data().packageId===data.packageId,'Solicitud reutilizada con otro paquete.');return;}
-      for(const id of ids){const ticket={token:id,packageId:data.packageId,sellerId:a.id,sellerName:a.name,status:'pending',buyer:name?{name,source:'seller'}:null,createdAt:serverTimestamp(),usedAt:null,requestId:a.id+'_'+data.requestId};tx.set(ref('tickets',id),ticket);tx.set(ref('passes',id),publicData(ticket));}tx.set(requestRef,{sellerId:a.id,packageId:data.packageId,ids,createdAt:serverTimestamp()});});return {};
+    for(let offset=0;offset<quantity;offset+=3){const requestId=baseRequest+'_'+Math.floor(offset/3),requestRef=ref('requests',requestId),size=Math.min(3,quantity-offset);let complete=false;
+      for(let attempt=0;attempt<3&&!complete;attempt++){const entries=Array.from({length:size},()=>({id:random(32),shortCode:newShortCode()}));
+        try{await runTransaction(db,async tx=>{const previous=await tx.get(requestRef);if(previous.exists()){requireValue(previous.data().packageId===data.packageId&&previous.data().quantity===quantity,'Solicitud reutilizada con otro lote.');return;}
+          const reservations=await Promise.all(entries.map(t=>tx.get(ref('codes',t.shortCode))));requireValue(reservations.every(s=>!s.exists())&&new Set(entries.map(t=>t.shortCode)).size===size,'Colisión de código. Reintentando.');
+          for(const {id,shortCode} of entries){const ticket={token:id,shortCode,packageId:data.packageId,sellerId:a.id,sellerName:a.name,status:'pending',buyer:name?{name,source:'seller'}:null,createdAt:serverTimestamp(),usedAt:null,requestId};tx.set(ref('tickets',id),ticket);tx.set(ref('passes',id),publicData(ticket));tx.set(ref('codes',shortCode),{token:id,sellerId:a.id});}tx.set(requestRef,{sellerId:a.id,packageId:data.packageId,ids:entries.map(t=>t.id),quantity,createdAt:serverTimestamp()});});complete=true;}
+        catch(error){if(attempt===2||(!['permission-denied','aborted'].includes(error.code)&&!error.message.includes('Colisión')))throw error;}
+      }data.onProgress?.(offset+size,quantity);
+    }return {quantity};
   }
   if(['markSent','requestApproval'].includes(action)){
     allow(a,['supreme','seller']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),snap=await tx.get(r);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(t.sellerId===a.id,'Solo puedes marcar tus propias entradas.');requireValue(t.status==='pending','Solo se modifican entradas pendientes.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';if(!t[field])tx.update(r,{[field]:serverTimestamp(),...(action==='requestApproval'?{approvalRequestedBy:a.id}:{})});});return {};
@@ -49,8 +57,8 @@ async function execute(action,data){
     allow(a,['supreme']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),salesRef=ref('meta','sales'),snap=await tx.get(r),sales=await tx.get(salesRef);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(action==='approve'?t.status==='pending':['pending','valid'].includes(t.status),'Esta entrada ya no permite esta operación.');const status=action==='approve'?'valid':'cancelled';tx.update(r,{status,...(action==='approve'?{approvedAt:serverTimestamp(),approvedBy:a.id}:{cancelledAt:serverTimestamp(),cancelledBy:a.id})});tx.update(ref('passes',data.id),{status});const delta=action==='approve'?1:t.status==='valid'?-1:0;if(delta){const approved=(sales.exists()?sales.data().approved:0)+delta;tx.set(salesRef,{approved,initialSold:110,lastTicket:data.id,updatedAt:serverTimestamp()});tx.set(ref('publicStats','sales'),{approved,initialSold:110,updatedAt:serverTimestamp()});}});return {};
   }
   if(action==='lookup'||action==='validate'){
-    allow(a,['supreme','validator']);if(action==='lookup')return publicTicket(data.code);
-    await runTransaction(db,async tx=>{const r=ref('tickets',data.code),snap=await tx.get(r);requireValue(snap.exists()&&snap.data().status==='valid','QR utilizado, invalidado o pendiente de aprobación.');tx.update(r,{status:'used',usedAt:serverTimestamp(),validatedBy:a.id});tx.update(ref('passes',data.code),{status:'used'});});return {status:'used'};
+    allow(a,['supreme','validator']);const code=await resolveCode(data.code);if(action==='lookup')return publicTicket(code);
+    await runTransaction(db,async tx=>{const r=ref('tickets',code),snap=await tx.get(r);requireValue(snap.exists()&&snap.data().status==='valid','QR utilizado, invalidado o pendiente de aprobación.');tx.update(r,{status:'used',usedAt:serverTimestamp(),validatedBy:a.id});tx.update(ref('passes',code),{status:'used'});});return {status:'used'};
   }
   throw new Error('Operación no disponible.');
 }

@@ -11,6 +11,7 @@ service cloud.firestore {
     function passMatches(id, t) {
       let p = passAfter(id);
       return p.token == id && p.status == t.status && p.packageId == t.packageId
+        && (!('shortCode' in t) || p.shortCode == t.shortCode)
         && p.registered == (t.buyer != null)
         && p.name == (t.buyer == null ? 'Sin nombre' : t.buyer.name);
     }
@@ -45,19 +46,22 @@ service cloud.firestore {
         && request.resource.data.active == false && request.resource.data.revokedAt == request.time;
     }
     match /shadowfest_live/2026/requests/{id} {
-      allow get: if seller() && (supreme() || id.matches(request.auth.uid + '_[a-f0-9]{32}'));
-      allow create: if seller() && request.resource.data.keys().hasOnly(['sellerId','packageId','ids','createdAt'])
-        && id.matches(request.auth.uid + '_[a-f0-9]{32}') && request.resource.data.sellerId == request.auth.uid
+      allow get: if seller() && (supreme() || id.matches(request.auth.uid + '_[a-f0-9]{32}(_[0-3])?'));
+      allow create: if seller() && request.resource.data.keys().hasOnly(['sellerId','packageId','ids','quantity','createdAt'])
+        && id.matches(request.auth.uid + '_[a-f0-9]{32}_[0-3]') && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.packageId in ['general','crew','vip']
         && request.resource.data.ids is list
-        && request.resource.data.ids.size() == (request.resource.data.packageId == 'crew' ? 6 : 1)
+        && request.resource.data.ids.size() >= 1 && request.resource.data.ids.size() <= 3
+        && (request.resource.data.packageId == 'crew' ? request.resource.data.quantity == 6 : request.resource.data.quantity in [1,5,10])
         && request.resource.data.createdAt == request.time;
     }
     match /shadowfest_live/2026/tickets/{id} {
       allow get, list: if supreme() || (active() && staff().role == 'seller' && resource.data.sellerId == request.auth.uid);
       allow get: if door();
       allow create: if seller() && id.matches('[a-f0-9]{64}')
-        && request.resource.data.keys().hasOnly(['token','packageId','sellerId','sellerName','status','buyer','createdAt','usedAt','requestId'])
+        && request.resource.data.keys().hasOnly(['token','shortCode','packageId','sellerId','sellerName','status','buyer','createdAt','usedAt','requestId'])
+        && request.resource.data.shortCode.matches('[A-HJ-NP-Z2-9]{6}')
+        && getAfter(/databases/$(database)/documents/shadowfest_live/2026/codes/$(request.resource.data.shortCode)).data.token == id
         && request.resource.data.token == id && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.sellerName == staff().name && request.resource.data.status == 'pending'
         && request.resource.data.createdAt == request.time && request.resource.data.usedAt == null
@@ -91,7 +95,7 @@ service cloud.firestore {
     }
     match /shadowfest_live/2026/passes/{id} {
       allow get: if id.matches('[a-f0-9]{64}');
-      allow create: if seller() && request.resource.data.keys().hasOnly(['name','packageId','status','registered','token'])
+      allow create: if seller() && request.resource.data.keys().hasOnly(['name','packageId','status','registered','token','shortCode'])
         && ticketAfter(id).sellerId == request.auth.uid && ticketAfter(id).createdAt == request.time
         && passMatches(id,ticketAfter(id));
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','registered','status'])
@@ -100,6 +104,16 @@ service cloud.firestore {
           && ticketAfter(id).buyer.source == 'buyer' && ticketAfter(id).buyer.registeredAt == request.time)
           || (supreme() && request.resource.data.status in ['valid','cancelled'])
           || (door() && resource.data.status == 'valid' && request.resource.data.status == 'used'));
+    }
+    match /shadowfest_live/2026/codes/{code} {
+      allow get: if code.matches('[A-HJ-NP-Z2-9]{6}') && (door() || (seller() &&
+        (!exists(/databases/$(database)/documents/shadowfest_live/2026/codes/$(code)) || resource.data.sellerId == request.auth.uid)));
+      allow create: if seller() && code.matches('[A-HJ-NP-Z2-9]{6}')
+        && request.resource.data.keys().hasOnly(['token','sellerId'])
+        && request.resource.data.sellerId == request.auth.uid
+        && ticketAfter(request.resource.data.token).shortCode == code
+        && ticketAfter(request.resource.data.token).sellerId == request.auth.uid
+        && ticketAfter(request.resource.data.token).createdAt == request.time;
     }
     match /shadowfest_live/2026/meta/sales {
       allow get: if supreme();

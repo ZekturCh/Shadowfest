@@ -17,6 +17,7 @@ La implementación vigente usa `shadowfest_live/2026`. El espacio antiguo `shado
 | `staff` | Admin lista y crea vendedores/validadores; cada persona puede leer su permiso |
 | `tickets` | Admin ve todos; vendedor consulta solo los suyos; puerta consulta un QR individual |
 | `passes` | Consulta individual mediante token aleatorio de 256 bits; nunca permite listar |
+| `codes` | Código de puerta de seis caracteres; consulta solo por personal o vendedor propietario, sin listado público |
 | `requests` | Reintentos de emisión por vendedor, sin duplicar QR |
 | `meta/sales` | Contador privado y referencia a la última entrada contabilizada |
 | `publicStats/sales` | Solo contador público, sin enlaces de QR ni compradores |
@@ -56,3 +57,5 @@ node --test tests/firestore.rules.mjs
 ```
 
 El emulador requiere Java 21. Las pruebas incluyen aislamiento de vendedores, pack de seis, rechazo de roles falsos, aprobación/contador atómicos, nombre único, revocación e ingreso concurrente único. Los datos del emulador y de la demo localhost no se migran a producción.
+
+La emisión vigente admite lotes individuales de 1/5/10 y pack de 6. Cada parte contiene hasta tres entradas para respetar los límites de consulta de reglas por transacción. Los códigos se reservan en una transacción, se comprueban colisiones y se reintentan; una reserva existente nunca puede reasignarse. El índice del código corto se mantiene privado y el enlace público del comprador conserva su token largo. Las solicitudes parciales se identifican con UID, clave aleatoria estable e índice de parte.

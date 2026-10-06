@@ -1,0 +1,5 @@
+const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const shortCodePattern=/^[A-HJ-NP-Z2-9]{6}$/;
+export function newShortCode(){let code;do{code=[...crypto.getRandomValues(new Uint8Array(6))].map(n=>alphabet[n%alphabet.length]).join('');}while(!/[A-Z]/.test(code)||!/[2-9]/.test(code));return code;}
+export function ticketQuantity(packageId,quantity=1){const count=Number(quantity);if(packageId==='crew')return 6;if(![1,5,10].includes(count))throw new Error('Selecciona 1, 5 o 10 entradas.');return count;}
+export function extractTicketCode(value){let code=String(value||'').trim();if(/^https?:/i.test(code)){const url=new URL(code);const allowed=['zekturch.github.io','comecome-ab1a0.web.app','comecome-ab1a0.firebaseapp.com','localhost','127.0.0.1'];if(!allowed.includes(url.hostname)||!url.pathname.endsWith('/qr.html'))throw new Error('Enlace de entrada inválido.');code=url.hash.slice(1);}if(shortCodePattern.test(code.toUpperCase()))return code.toUpperCase();if(/^[a-f0-9]{64}$/i.test(code))return code.toLowerCase();throw new Error('Escribe los 6 caracteres de la entrada o pega su enlace.');}

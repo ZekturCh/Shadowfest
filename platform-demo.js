@@ -1,9 +1,10 @@
-import { initialSold } from './surprises.js';
+import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261006b';
+import { initialSold } from './surprises.js?v=20261006b';
 const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});
 function read(){return JSON.parse(localStorage.getItem(key)||'null')||initial();}
-function publicTicket(t){return {id:t.id,name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token};}
+function publicTicket(t){return {id:t.id,name:t.buyer?.name||'Sin nombre',packageId:t.packageId,status:t.status,registered:!!t.buyer,token:t.token,shortCode:t.shortCode};}
 export async function demoRequest(action,data,token){
   const localSecret=action==='login'?(await (await fetch('.shadowfest-local.json',{cache:'no-store'})).json()).supremeCode:null;
   return navigator.locks.request(key,()=>{
@@ -22,7 +23,7 @@ export async function demoRequest(action,data,token){
       if(action==='claim') { if(ticket.buyer) throw new Error('La entrada ya fue registrada.'); const name=String(data.name||'').trim(),phone=String(data.phone||'').trim(); if(name.length<3||name.length>80||!/^\+?[0-9 ()-]{7,20}$/.test(phone)||!data.adult||!data.consent)throw new Error('Completa tus datos y las confirmaciones.');ticket.buyer={name,phone,registeredAt:new Date().toISOString()};save(); }
       return ticket.buyer?publicTicket(ticket):{packageId:ticket.packageId,registered:false};
     }
-    if(action==='ticket') {const t=state.tickets.find(t=>t.token===data.code);if(!t)throw new Error('Entrada no encontrada.');return publicTicket(t);}
+    if(action==='ticket') {const t=state.tickets.find(t=>(t.token===data.code||t.shortCode===data.code));if(!t)throw new Error('Entrada no encontrada.');return publicTicket(t);}
     if(action==='buyerName'){const t=state.tickets.find(t=>t.token===data.code);if(!t||!['pending','valid'].includes(t.status))throw new Error('Entrada no disponible.');if(t.buyer?.name)throw new Error('Esta entrada ya tiene nombre.');const name=String(data.name||'').trim();if(name.length<2||name.length>80||data.consent!==true)throw new Error('Escribe tu nombre y acepta guardarlo.');t.buyer={name,registeredAt:new Date().toISOString(),source:'buyer'};save();return publicTicket(t);}
     const session=state.sessions.find(s=>s.token===token&&s.expires>Date.now());
     if(!session || (session.actor.id!=='supreme'&&!state.accesses.some(a=>a.id===session.actor.id&&a.active)))throw new Error('Ingresa tu código de acceso.');
@@ -38,9 +39,9 @@ export async function demoRequest(action,data,token){
       if(!['seller','supreme'].includes(actor.role)||!['general','crew','vip'].includes(data.packageId))throw new Error('Selecciona un paquete válido.');
       if(!/^[a-f0-9]{32}$/.test(data.requestId||''))throw new Error('Solicitud inválida.');
       const previous=state.tickets.filter(t=>t.requestId===data.requestId&&t.sellerId===actor.id);if(previous.length)return previous;
-      const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:data.name?.trim()?{name:data.name.trim().slice(0,80)}:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return tickets;
+      const tickets=Array.from({length:ticketQuantity(data.packageId,data.quantity)},()=>({id:random(16),shortCode:newShortCode(),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:data.name?.trim()?{name:data.name.trim().slice(0,80)}:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return tickets;
     }
-    const t=state.tickets.find(t=>['approve','cancel','markSent','requestApproval'].includes(action)?t.id===data.id:t.token===data.code);if(!t)throw new Error('Entrada no encontrada.');
+    const t=state.tickets.find(t=>['approve','cancel','markSent','requestApproval'].includes(action)?t.id===data.id:(t.token===data.code||t.shortCode===data.code));if(!t)throw new Error('Entrada no encontrada.');
     if(['markSent','requestApproval'].includes(action)){if(!['seller','supreme'].includes(actor.role)||(actor.role!=='supreme'&&t.sellerId!==actor.id))throw new Error('No tienes permiso sobre esta entrada.');if(t.status!=='pending')throw new Error('Solo se modifican entradas pendientes.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';t[field] ||=new Date().toISOString();if(action==='requestApproval')t.approvalRequestedBy=actor.id;save();return {};}
     if(action==='approve'){supreme();if(t.status!=='pending')throw new Error('Solo se aprueban entradas pendientes.');t.status='valid';t.approvedAt=new Date().toISOString();save();return {};}
     if(action==='cancel'){if(actor.role!=='supreme')throw new Error('Solo el organizador puede anular.');if(!['pending','valid'].includes(t.status))throw new Error('Solo se invalidan entradas pendientes o aprobadas.');t.status='cancelled';save();return {};}

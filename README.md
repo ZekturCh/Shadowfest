@@ -2,7 +2,7 @@
 
 Web de Halloween y reggaetón en Lima, +18, compra por WhatsApp y administración de entradas por códigos.
 
-Producción: https://comecome-ab1a0.web.app/ . Firebase `comecome-ab1a0`, Firestore y Authentication interno, sin Cloud Functions ni Blaze. La transferencia se comprueba por interno; la web no procesa pagos.
+Enlace principal: https://zekturch.github.io/Shadowfest/ . También disponible en https://comecome-ab1a0.web.app/ . Firebase `comecome-ab1a0`, Firestore y Authentication interno, sin Cloud Functions ni Blaze. La transferencia se comprueba por interno; la web no procesa pagos.
 
 ## Pantallas
 
@@ -30,3 +30,11 @@ npm run build
 Ver [FIREBASE.md](FIREBASE.md) para reglas, arquitectura, pruebas de permisos y despliegue. No publicar archivos privados de accesos ni secretos. QR de 256 bits con enlaces privados; el contador público no expone entradas.
 
 Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 11 de octubre inclusive (Lima), S/25 desde el 12 y S/30 en puerta. Precios pack/VIP pendientes. Metas 150/200/300 propuestas; las sorpresas del código público no son secretos. El mapa se retiró hasta contar con una referencia fiel.
+
+## Operación en puerta y lotes
+
+Se pueden generar 1, 5 o 10 entradas individuales. El pack mantiene sus seis entradas y beneficio independiente. La emisión por lotes guarda partes pequeñas con una solicitud estable para reintentar sin duplicar lo ya guardado; una interrupción puede dejar parte del lote pendiente, y se completa con el mismo intento. Los botones bloquean acciones repetidas mientras se guardan.
+
+Cada entrada tiene un código de puerta de seis caracteres aleatorios, mezclando letras y números y evitando I/O/0/1. El índice de códigos solo permite consulta a personal autorizado; el cliente conserva un enlace privado de 256 bits para abrir su QR. El QR nuevo codifica esos seis caracteres. Se aceptan enlaces antiguos y enlaces de ambos hosts. Las entradas existentes recibieron un código corto sin cambiar su vendedor, estado o contador.
+
+El lector usa qr-scanner (MIT), con decodificador alternativo cuando no hay BarcodeDetector y opción de foto. Requiere HTTPS y permiso de cámara; el comportamiento de una cámara física de iPhone debe comprobarse en ese dispositivo.

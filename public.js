@@ -1,8 +1,8 @@
-import { event } from './config.js';
-import { saleStage, requestDetails } from './sales.js';
-import { whatsappUrl, purchaseMessage } from './whatsapp.js';
-import { request, localDemo } from './platform.js';
-import { surprises, initialSold } from './surprises.js';
+import { event } from './config.js?v=20261006b';
+import { saleStage, requestDetails } from './sales.js?v=20261006b';
+import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261006b';
+import { request, localDemo } from './platform.js?v=20261006b';
+import { surprises, initialSold } from './surprises.js?v=20261006b';
 const unlockCards = document.querySelector('#unlock-cards');
 function renderUnlocks(sold) {
   document.querySelector('#sold-count').textContent=sold;
