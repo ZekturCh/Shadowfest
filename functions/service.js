@@ -29,7 +29,7 @@ export function createService(db,supremeSecret){
   }
   return async function execute(action,data={},token='',ip='unknown'){
     assert(typeof action==='string','Solicitud inválida.');
-    if(['login','claimLookup','claim','ticket'].includes(action))await rateLimit(ip,action);
+    if(['login','claimLookup','claim','ticket','buyerName'].includes(action))await rateLimit(ip,action);
     if(action==='stats'){const s=await statsRef.get();return {sold:110+(s.exists?s.data().issued:0),initialSold:110};}
     if(action==='login'){
       assert(typeof data.code==='string'&&data.code.length<=64,'Código inválido.');
@@ -39,6 +39,10 @@ export function createService(db,supremeSecret){
       const sessionToken=random(32);await collection('sessions').doc(hash(sessionToken)).set({actor,expiresAt:new Date(Date.now()+8*3600000),secretVersion:actor.id==='supreme'?hash(supremeSecret):null});return {token:sessionToken,actor};
     }
     if(action==='ticket'){const {ticket}=await findTicket(data.code);return publicTicket(ticket);}
+    if(action==='buyerName'){
+      const {ref}=await findTicket(data.code);const name=String(data.name||'').trim();assert(name.length>=2&&name.length<=80&&data.consent===true,'Escribe tu nombre y acepta guardarlo.');
+      return db.runTransaction(async tx=>{const current=(await tx.get(ref)).data();assert(['pending','valid'].includes(current.status),'Entrada no disponible.');assert(!current.buyer?.name,'Esta entrada ya tiene nombre.',409);const buyer={name,registeredAt:now(),source:'buyer'};tx.update(ref,{buyer});return publicTicket({...current,buyer});});
+    }
     if(action==='claimLookup'||action==='claim'){
       const {ref,ticket}=await findTicket(data.code,'claim');assert(ticket.status!=='cancelled','Entrada anulada.');
       if(action==='claimLookup')return ticket.buyer?publicTicket(ticket):{packageId:ticket.packageId,registered:false};
@@ -64,6 +68,10 @@ export function createService(db,supremeSecret){
       const tickets=Array.from({length:data.packageId==='crew'?6:1},()=>({id:random(16),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:typeof data.name==='string'&&data.name.trim()?{name:data.name.trim().slice(0,80)}:null,createdAt:now(),usedAt:null}));
       return db.runTransaction(async tx=>{const prev=await tx.get(requestRef);if(prev.exists){assert(prev.data().packageId===data.packageId,'Solicitud reutilizada con otro paquete.');const snaps=await Promise.all(prev.data().ids.map(id=>tx.get(collection('tickets').doc(id))));return snaps.map(s=>({id:s.id,...s.data()}));}
         const stats=await tx.get(statsRef);tickets.forEach(({id,...t})=>{tx.create(collection('tickets').doc(id),t);tx.create(collection('tokens').doc(hash(t.token)),{ticketId:id});tx.create(collection('claims').doc(hash(t.claimCode)),{ticketId:id});});tx.create(requestRef,{ids:tickets.map(t=>t.id),packageId:data.packageId,sellerId:actor.id,createdAt:now()});return tickets;});
+    }
+    if(['markSent','requestApproval'].includes(action)){
+      allow(actor,['supreme','seller']);assert(/^[a-f0-9]{32}$/.test(data.id||''),'Entrada inválida.');const ref=collection('tickets').doc(data.id);
+      await db.runTransaction(async tx=>{const snap=await tx.get(ref);assert(snap.exists,'Entrada no encontrada.');const current=snap.data();assert(actor.role==='supreme'||current.sellerId===actor.id,'No tienes permiso sobre esta entrada.',403);assert(current.status==='pending','Solo se modifican entradas pendientes.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';if(!current[field])tx.update(ref,{[field]:now(),...(action==='requestApproval'?{approvalRequestedBy:actor.id}:{})});});return {};
     }
     if(action==='approve'||action==='cancel'){
       allow(actor,['supreme']);assert(/^[a-f0-9]{32}$/.test(data.id||''),'Entrada inválida.');const ref=collection('tickets').doc(data.id);

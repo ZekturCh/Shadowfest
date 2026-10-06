@@ -37,3 +37,7 @@ QR con qrcodejs 1.0.0 distribuido en `vendor` (MIT). El escáner usa BarcodeDete
 ## Equipo
 
 El administrador puede crear individualmente vendedores y personal de puerta, generar códigos aleatorios y revocar accesos. Un botón prepara Angélica, Jesús, Diego, Lucía, Sebastián y César sin duplicar nombres existentes. Los códigos nuevos se muestran hasta recargar; deben entregarse por privado. El panel resume QR generados, pendientes, ventas aprobadas e invalidados por vendedor.
+
+## Envío y revisión manual
+
+Generar deja el QR pendiente y asignado al actor, también si lo genera el admin. El vendedor marca el enlace como enviado y solicita aprobación al recibir la confirmación del cliente. Estas acciones no verifican pagos ni aumentan ventas. El admin revisa las solicitudes, comprueba el ingreso en Yape por interno y aprueba o invalida. La página del QR permite agregar un nombre opcional una sola vez con consentimiento; el panel distingue el nombre registrado por el comprador del ingresado al generar. Este flujo sigue en prueba local hasta completar la conexión gratuita con Firebase.
