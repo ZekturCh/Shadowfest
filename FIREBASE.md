@@ -28,6 +28,7 @@ La implementación vigente usa `shadowfest_live/2026`. El espacio antiguo `shado
 | `codes` | Código de puerta de seis caracteres; consulta solo por personal o vendedor propietario, sin listado público |
 | `requests` | Reintentos de emisión por vendedor, sin duplicar QR |
 | `meta/sales` | Contador privado y referencia a la última entrada contabilizada |
+| `meta/invitations` | Cupos de cortesía; solo admin, cambios ligados a emitir o anular QR en la misma transacción |
 | `publicStats/sales` | Solo contador público, sin enlaces de QR ni compradores |
 
 `firestore-live.rules` es el archivo que despliega `firebase.json`. Las reglas verifican permisos, vendedor asignado, cambios permitidos, fechas del servidor y consistencia de las escrituras. Aprobar/invalidate y contador se actualizan juntos; cada ingreso usa una transacción. El acceso público a un QR permite añadir un nombre solo una vez, con consentimiento, sin aprobarlo. El enlace es privado: quien lo tenga puede consultar esa entrada.
@@ -42,7 +43,13 @@ El bloqueo de las demás colecciones se conserva del despliegue anterior. Para i
 4. El admin comprueba el pago por interno y aprueba o invalida.
 5. En puerta solo se admite un QR aprobado, una vez. Un QR pendiente, invalidado o utilizado se rechaza.
 
-El contador público y el panel muestran únicamente entradas aprobadas; no suman una base histórica. Generar, enviar, solicitar aprobación y poner nombre no suman. Aprobar suma uno; invalidar una entrada aprobada resta uno; entrar no resta. El campo legado `initialSold: 110` se conserva en las escrituras por compatibilidad con las reglas desplegadas, pero no se usa para calcular ni mostrar ventas. Las metas de sorpresa 150/200/300 siguen siendo propuestas.
+El contador público y el panel muestran únicamente entradas aprobadas; no suman una base histórica. Generar, enviar, solicitar aprobación y poner nombre no suman. Aprobar suma uno; invalidar una entrada aprobada resta uno; entrar no resta. Las cortesías activadas se incluyen en entradas aprobadas, pero el panel del generador las distingue de ventas pagadas. El campo legado `initialSold: 110` se conserva en las escrituras por compatibilidad con las reglas desplegadas, pero no se usa para calcular ni mostrar ventas. Las metas de sorpresa 150/200/300 siguen siendo propuestas.
+
+## Invitaciones y canjes de entrada
+
+`invitaciones.html` requiere el mismo acceso supremo que Administración. Genera QR General gratuitos, con `packageId: invitation`, en lotes de 1/5/10. Cada uno reserva un cupo y conserva vendedor/generador, nombre opcional, estado y fecha de envío. La organización debe activarlo para permitir su ingreso. Su enlace privado abre `invitacion.html#TOKEN`; el código de puerta sigue siendo de seis caracteres y el validador muestra que es cortesía. Un canje de entrada gratuito es diferente del QR de canje de comida o bebida.
+
+La emisión actualiza `meta/invitations` junto con su solicitud y los QR; las reglas permiten esta operación exclusivamente al supremo y comprueban un límite de 110 cupos. La anulación libera exactamente un cupo en la misma transacción. Un QR utilizado conserva su cupo y no puede anularse. Los reintentos conservan los mismos QR sin consumir cupos adicionales. La página pública comunica hasta 110 cupos previstos para invitaciones/canjes, sin presentarlos como ventas pagadas ni como asistentes que ya ingresaron.
 
 ## Publicar
 
@@ -64,7 +71,7 @@ npx firebase-tools emulators:start --only firestore --project demo-shadowfest
 node --test tests/firestore.rules.mjs
 ```
 
-El emulador requiere Java 21. Las pruebas incluyen aislamiento de vendedores, pack de seis, rechazo de roles falsos, aprobación/contador atómicos, nombre único, revocación e ingreso concurrente único. Los datos del emulador y de la demo localhost no se migran a producción.
+El emulador requiere Java 21. Las pruebas incluyen aislamiento de vendedores, pack de seis, rechazo de roles falsos, aprobación/contador atómicos, nombre único, revocación e ingreso concurrente único. También verifican emisión exclusiva de cortesías por el supremo, reintentos sin duplicar, límite de 110 bajo concurrencia, liberación de cupos al anular y permanencia de cupos utilizados. Los datos del emulador y de la demo localhost no se migran a producción.
 
 La emisión vigente admite lotes individuales de 1/5/10 y pack de 6. Cada parte contiene hasta tres entradas para respetar los límites de consulta de reglas por transacción. Los códigos se reservan en una transacción, se comprueban colisiones y se reintentan; una reserva existente nunca puede reasignarse. El índice del código corto se mantiene privado y el enlace público del comprador conserva su token largo. Las solicitudes parciales se identifican con UID, clave aleatoria estable e índice de parte.
 

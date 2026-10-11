@@ -5,6 +5,7 @@ import { newShortCode, shortCodePattern, ticketQuantity } from '../ticket-code.j
 import { normalizeAccessCode, validStaffCode } from '../staff-code.js';
 import { checkConsumption, publicConsumption } from '../consumption.js';
 import { confirmedSales } from '../public-stats.js';
+import { invitationLimit, invitationPackageId, isInvitation, allocateInvitations } from '../invitation-policy.js';
 
 export const firebaseConfig={apiKey:'AIzaSyCL4RyZwSHQighzQ61qbaGfK9jCiIfB30U',authDomain:'comecome-ab1a0.firebaseapp.com',projectId:'comecome-ab1a0',storageBucket:'comecome-ab1a0.firebasestorage.app',messagingSenderId:'399645583727',appId:'1:399645583727:web:2e777325eaa14ed559a09a'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -35,6 +36,8 @@ async function execute(action,data){
   }
   const a=await actor();
   if(action==='me')return a;
+  if(action==='invitationStats'){allow(a,['supreme']);const snap=await getDoc(ref('meta','invitations'));return {limit:invitationLimit,allocated:snap.exists()?snap.data().allocated:0};}
+  if(action==='invitationList'){allow(a,['supreme']);return (await getDocs(query(coll('tickets'),where('packageId','==',invitationPackageId)))).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
   if(action==='consumptionList'){allow(a,['supreme']);return (await getDocs(coll('consumptions'))).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
   if(action==='consumptionCreate'){
     allow(a,['supreme']);const description=checkConsumption(data.description,data.amountCents),id=data.requestId;requireValue(/^[a-f0-9]{64}$/.test(id||''),'Solicitud de pedido inválida.');const ticketId=await resolveCode(data.code);
@@ -61,23 +64,27 @@ async function execute(action,data){
   if(action==='accessRevoke'){allow(a,['supreme']);await writeBatch(db).update(ref('staff',data.id),{active:false,revokedAt:serverTimestamp()}).commit();return {};}
   if(action==='list'){allow(a,['supreme','seller']);const q=a.role==='seller'?query(coll('tickets'),where('sellerId','==',a.id)):coll('tickets');return (await getDocs(q)).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
   if(action==='issue'){
-    allow(a,['supreme','seller']);requireValue(['general','crew','vip'].includes(data.packageId)&&/^[a-f0-9]{32}$/.test(data.requestId||''),'Solicitud o paquete inválido.');
+    allow(a,['supreme','seller']);requireValue(['general','crew','vip',invitationPackageId].includes(data.packageId)&&/^[a-f0-9]{32}$/.test(data.requestId||''),'Solicitud o paquete inválido.');
+    const invitation=data.packageId===invitationPackageId;if(invitation)allow(a,['supreme']);
     const quantity=ticketQuantity(data.packageId,data.quantity),baseRequest=a.id+'_'+data.requestId;
     const name=String(data.name||'').trim();requireValue(name.length<=80,'Nombre demasiado largo.');
     for(let offset=0;offset<quantity;offset+=3){const requestId=baseRequest+'_'+Math.floor(offset/3),requestRef=ref('requests',requestId),size=Math.min(3,quantity-offset);let complete=false;
       for(let attempt=0;attempt<3&&!complete;attempt++){const entries=Array.from({length:size},()=>({id:random(32),shortCode:newShortCode()}));
         try{await runTransaction(db,async tx=>{const previous=await tx.get(requestRef);if(previous.exists()){requireValue(previous.data().packageId===data.packageId&&previous.data().quantity===quantity,'Solicitud reutilizada con otro lote.');return;}
+          const allocation=invitation?await tx.get(ref('meta','invitations')):null;
+          const allocated=invitation?allocateInvitations(allocation.exists()?allocation.data().allocated:0,size):0;
           const reservations=await Promise.all(entries.map(t=>tx.get(ref('codes',t.shortCode))));requireValue(reservations.every(s=>!s.exists())&&new Set(entries.map(t=>t.shortCode)).size===size,'Colisión de código. Reintentando.');
+          if(invitation)tx.set(ref('meta','invitations'),{allocated,lastRequest:requestId,lastTicket:null,updatedAt:serverTimestamp()});
           for(const {id,shortCode} of entries){const ticket={token:id,shortCode,packageId:data.packageId,sellerId:a.id,sellerName:a.name,status:'pending',buyer:name?{name,source:'seller'}:null,createdAt:serverTimestamp(),usedAt:null,requestId};tx.set(ref('tickets',id),ticket);tx.set(ref('passes',id),publicData(ticket));tx.set(ref('codes',shortCode),{token:id,sellerId:a.id});}tx.set(requestRef,{sellerId:a.id,packageId:data.packageId,ids:entries.map(t=>t.id),quantity,createdAt:serverTimestamp()});});complete=true;}
         catch(error){if(attempt===2||(!['permission-denied','aborted'].includes(error.code)&&!error.message.includes('Colisión')))throw error;}
       }data.onProgress?.(offset+size,quantity);
     }return {quantity};
   }
   if(['markSent','requestApproval'].includes(action)){
-    allow(a,['supreme','seller']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),snap=await tx.get(r);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(t.sellerId===a.id,'Solo puedes marcar tus propias entradas.');requireValue(t.status==='pending','Solo se modifican entradas pendientes.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';if(!t[field])tx.update(r,{[field]:serverTimestamp(),...(action==='requestApproval'?{approvalRequestedBy:a.id}:{})});});return {};
+    allow(a,['supreme','seller']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),snap=await tx.get(r);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(t.sellerId===a.id,'Solo puedes marcar tus propias entradas.');requireValue(t.status==='pending'||(action==='markSent'&&isInvitation(t)&&t.status==='valid'),'Esta entrada ya no permite marcar el envío.');if(action==='requestApproval')requireValue(!isInvitation(t),'Las cortesías se activan sin solicitar pago.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';if(!t[field])tx.update(r,{[field]:serverTimestamp(),...(action==='requestApproval'?{approvalRequestedBy:a.id}:{})});});return {};
   }
   if(['approve','cancel'].includes(action)){
-    allow(a,['supreme']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),salesRef=ref('meta','sales'),snap=await tx.get(r),sales=await tx.get(salesRef);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(action==='approve'?t.status==='pending':['pending','valid'].includes(t.status),'Esta entrada ya no permite esta operación.');const status=action==='approve'?'valid':'cancelled';tx.update(r,{status,...(action==='approve'?{approvedAt:serverTimestamp(),approvedBy:a.id}:{cancelledAt:serverTimestamp(),cancelledBy:a.id})});tx.update(ref('passes',data.id),{status});const delta=action==='approve'?1:t.status==='valid'?-1:0;if(delta){const approved=(sales.exists()?sales.data().approved:0)+delta;tx.set(salesRef,{approved,initialSold:110,lastTicket:data.id,updatedAt:serverTimestamp()});tx.set(ref('publicStats','sales'),{approved,initialSold:110,updatedAt:serverTimestamp()});}});return {};
+    allow(a,['supreme']);await runTransaction(db,async tx=>{const r=ref('tickets',data.id),salesRef=ref('meta','sales'),snap=await tx.get(r),sales=await tx.get(salesRef);requireValue(snap.exists(),'Entrada no encontrada.');const t=snap.data();requireValue(action==='approve'?t.status==='pending':['pending','valid'].includes(t.status),'Esta entrada ya no permite esta operación.');const release=action==='cancel'&&isInvitation(t)?await tx.get(ref('meta','invitations')):null;if(release){requireValue(release.exists()&&release.data().allocated>0,'No se pudo liberar el cupo de cortesía.');tx.set(ref('meta','invitations'),{allocated:release.data().allocated-1,lastRequest:null,lastTicket:data.id,updatedAt:serverTimestamp()});}const status=action==='approve'?'valid':'cancelled';tx.update(r,{status,...(action==='approve'?{approvedAt:serverTimestamp(),approvedBy:a.id}:{cancelledAt:serverTimestamp(),cancelledBy:a.id})});tx.update(ref('passes',data.id),{status});const delta=action==='approve'?1:t.status==='valid'?-1:0;if(delta){const approved=(sales.exists()?sales.data().approved:0)+delta;tx.set(salesRef,{approved,initialSold:110,lastTicket:data.id,updatedAt:serverTimestamp()});tx.set(ref('publicStats','sales'),{approved,initialSold:110,updatedAt:serverTimestamp()});}});return {};
   }
   if(action==='lookup'||action==='validate'){
     allow(a,['supreme','validator']);const code=await resolveCode(data.code);if(action==='lookup')return publicTicket(code);

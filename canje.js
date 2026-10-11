@@ -1,8 +1,8 @@
-import {watchConsumptionData,showMode} from './platform.js?v=20261011c';
-import {consumptionLabels,consumptionAmount} from './consumption.js?v=20261011c';
-import {withBusy} from './busy.js?v=20261011c';
-import {event} from './config.js?v=20261011c';
-import {whatsappUrl} from './whatsapp.js?v=20261011c';
+import {watchConsumptionData,showMode} from './platform.js?v=20261011-invites';
+import {consumptionLabels,consumptionAmount} from './consumption.js?v=20261011-invites';
+import {withBusy} from './busy.js?v=20261011-invites';
+import {event} from './config.js?v=20261011-invites';
+import {whatsappUrl} from './whatsapp.js?v=20261011-invites';
 showMode();let stop=null,currentShort='',generation=0;
 const feedback=document.querySelector('#consumption-status'),box=document.querySelector('#consumption-qr'),copy=document.querySelector('#copy-consumption-code');
 document.querySelector('#consumption-help').href=whatsappUrl(event.whatsapp,'Hola, tengo una consulta sobre mi precompra y el QR de canje de Shadow Fest.');

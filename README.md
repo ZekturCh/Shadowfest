@@ -9,12 +9,14 @@ Enlace principal: https://shadowfest.web.app/ . También disponible en https://z
 - `index.html`: compra por WhatsApp al +51 955 121 011, precios de General/VIP/pack, experiencia, carta prevista y contador de entradas aprobadas.
 - `admin.html`: admin supremo o vendedor, según su código. Vendedores ven solo sus entradas; admin crea accesos, revisa pagos y aprueba o invalida.
 - `qr.html#TOKEN`: QR individual, nombre opcional, solicitud de comida/bebidas por WhatsApp y pedidos del comprador.
+- `invitaciones.html`: solo admin supremo, genera y administra cortesías en lotes de 1/5/10, con un máximo de 110 cupos activos o utilizados.
+- `invitacion.html#TOKEN`: pase individual de cortesía General, con diseño propio, nombre opcional e ingreso único al activarlo.
 - `canje.html#TOKEN`: pedido y QR de canje, disponible al aprobar el pago.
 - `canjear.html`: admin o personal con permiso de validación, consulta y entrega completa de un pedido pagado una sola vez.
 - `validar.html`: personal de puerta o admin, consulta e ingreso único de entradas aprobadas.
 - `activar.html`: pantalla anterior de registro; no se usa en el flujo actual.
 
-Cada QR queda asignado a quien lo genera, incluido el admin. El vendedor marca el enlace como enviado y solicita aprobación cuando el cliente confirma el pago. Solo la aprobación del admin suma una venta y habilita el QR para entrar. Un pack genera seis entradas individuales.
+Cada QR queda asignado a quien lo genera, incluido el admin. El vendedor marca el enlace como enviado y solicita aprobación cuando el cliente confirma el pago. Solo la aprobación del admin habilita el QR para entrar. Un pack genera seis entradas individuales. Las cortesías se generan y activan exclusivamente desde el admin; están identificadas como gratuitas y el panel separa sus métricas de las ventas pagadas. Anular una cortesía sin utilizar libera su cupo; las utilizadas conservan el cupo y no permiten un segundo ingreso.
 
 Las precompras se acuerdan por WhatsApp. La carta prevista muestra las propuestas del presupuesto; productos, precios y disponibilidad se confirman antes de cobrar. El supremo registra productos, cantidades, monto y la entrada asociada; luego aprueba el pago. Los pedidos se actualizan en vivo en la página del comprador. El QR de canje usa `SF-CANJE:XXXXXX` y el código manual `C-XXXXXX`; se rechaza en el control de ingreso. Entradas y consumos tienen estados independientes: un canje no registra el ingreso, ni suma entradas vendidas. Un pedido se entrega completo y una sola vez. Para corregir productos o monto, anular el pedido y registrar uno nuevo.
 
@@ -47,4 +49,4 @@ Los nuevos códigos sugeridos para vendedores usan la inicial sin tilde, `26` y 
 
 ## Página de venta
 
-El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados (incluye usados, excluye anulados); no añade una base histórica.
+El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados de pago o de cortesía (incluye usados, excluye anulados); no añade una base histórica. La reserva de hasta 110 invitaciones y canjes se comunica por separado.

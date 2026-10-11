@@ -1,6 +1,6 @@
-import {request,extractCode,consumptionUrl,watchConsumptionData} from './platform.js?v=20261011c';
-import {withBusy} from './busy.js?v=20261011c';
-import {amountInCents,consumptionAmount,consumptionLabels} from './consumption.js?v=20261011c';
+import {request,extractCode,consumptionUrl,watchConsumptionData} from './platform.js?v=20261011-invites';
+import {withBusy} from './busy.js?v=20261011-invites';
+import {amountInCents,consumptionAmount,consumptionLabels} from './consumption.js?v=20261011-invites';
 let orders=[],started=false,requestId='',creating=false;
 const feedback=()=>document.querySelector('#consumption-admin-status');
 const secret=()=>[...crypto.getRandomValues(new Uint8Array(32))].map(b=>b.toString(16).padStart(2,'0')).join('');

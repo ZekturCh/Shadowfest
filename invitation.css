@@ -1,0 +1,18 @@
+body[data-ticket-kind=invitation] { background:radial-gradient(ellipse at 50% 20%,#50107566,transparent 65%),#0b080f; }
+body[data-ticket-kind=invitation] .ticket { border:1px solid #aa51cb; background:radial-gradient(ellipse at 80% 0,#67258a44,transparent 55%),#150d1b; border-radius:18px; box-shadow:0 0 65px #ad39ee17; }
+body[data-ticket-kind=invitation] .ticket .eyebrow { color:#e2a7fa; letter-spacing:2.5px; }
+body[data-ticket-kind=invitation] .ticket em { color:#d56dfa; }
+body[data-ticket-kind=invitation] .ticket h2 { font-size:56px; line-height:1; }
+body[data-ticket-kind=invitation] .ticket-code { color:#e3a0fa; }
+.invitation-brand { display:block; width:94px; height:94px; margin:0 auto 22px; border-radius:15px; }
+body[data-ticket-kind=invitation] .qr-box { border:6px solid #d780f1; border-radius:12px; box-shadow:0 0 30px #c747e522; }
+body[data-ticket-kind=invitation] #guest-package { color:#e2b1ef; font-size:14px; letter-spacing:1px; }
+body[data-ticket-kind=invitation] .entry-rules { text-align:left; }
+.invitation-reserve { display:grid; grid-template-columns:150px 1fr; align-items:center; gap:24px; padding:23px 26px; margin:0 0 26px; border:1px solid #8944aa; border-radius:8px; background:radial-gradient(ellipse at 0 50%,#6d239044,transparent 70%),#170d21; }
+.reserve-limit { display:grid; gap:3px; text-align:center; color:#e5b8fa; }
+.reserve-limit>span { font-size:11px; font-weight:700; letter-spacing:2px; }
+.reserve-limit>strong { font:800 65px/1 'Barlow Condensed',Impact,sans-serif; }
+.reserve-copy h3 { font:700 29px/1.1 'Barlow Condensed',Impact,sans-serif; color:#f3defa; margin:0 0 8px; }
+.reserve-copy p { font-size:13px; color:#c9abd6; line-height:1.7; margin:0; max-width:720px; }
+@media(max-width:600px) { .invitation-reserve { grid-template-columns:85px 1fr; gap:18px; padding:20px; } .reserve-limit>strong { font-size:54px; } .reserve-copy h3 { font-size:26px; } .reserve-copy p { font-size:12px; } body[data-ticket-kind=invitation] .ticket h2 { font-size:49px; } }
+@media(max-width:359px) { .invitation-reserve { grid-template-columns:1fr; gap:15px; } .reserve-limit { display:flex; align-items:center; gap:12px; text-align:left; } }

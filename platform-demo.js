@@ -1,7 +1,8 @@
-import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011c';
-import { confirmedSales } from './public-stats.js?v=20261011-sale3';
-import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011c';
-import {checkConsumption,publicConsumption} from './consumption.js?v=20261011c';
+import {invitationLimit,invitationPackageId,isInvitation,allocateInvitations} from './invitation-policy.js?v=20261011-invites';
+import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011-invites';
+import { confirmedSales } from './public-stats.js?v=20261011-invites';
+import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011-invites';
+import {checkConsumption,publicConsumption} from './consumption.js?v=20261011-invites';
 const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});
@@ -34,6 +35,8 @@ export async function demoRequest(action,data,token){
     if(!session || (session.actor.id!=='supreme'&&!state.accesses.some(a=>a.id===session.actor.id&&a.active)))throw new Error('Ingresa tu código de acceso.');
     const actor=session.actor;
     if(action==='me')return actor;
+    if(action==='invitationStats'){if(actor.role!=='supreme')throw new Error('Acceso solo del organizador.');return {limit:invitationLimit,allocated:state.tickets.filter(t=>isInvitation(t)&&t.status!=='cancelled').length};}
+    if(action==='invitationList'){if(actor.role!=='supreme')throw new Error('Acceso solo del organizador.');return state.tickets.filter(isInvitation);}
     if(action==='logout'){state.sessions=state.sessions.filter(s=>s.token!==token);save();return {};}
     const supreme=()=>{if(actor.role!=='supreme')throw new Error('Solo el organizador supremo puede realizar esta acción.');};
     if(action==='consumptionList'){supreme();return state.consumptions.map(c=>({id:c.token,...c}));}
@@ -44,13 +47,15 @@ export async function demoRequest(action,data,token){
     if(action==='accessRevoke'){supreme();const a=state.accesses.find(a=>a.id===data.id);if(!a)throw new Error('Acceso no encontrado.');a.active=false;save();return {};}
     if(action==='list'){if(actor.role==='validator')throw new Error('Acceso solo de validación.');return state.tickets.filter(t=>actor.role==='supreme'||t.sellerId===actor.id);}
     if(action==='issue'){
-      if(!['seller','supreme'].includes(actor.role)||!['general','crew','vip'].includes(data.packageId))throw new Error('Selecciona un paquete válido.');
+      if(!['seller','supreme'].includes(actor.role)||!['general','crew','vip',invitationPackageId].includes(data.packageId))throw new Error('Selecciona un paquete válido.');
       if(!/^[a-f0-9]{32}$/.test(data.requestId||''))throw new Error('Solicitud inválida.');
+      if(data.packageId===invitationPackageId)supreme();
       const previous=state.tickets.filter(t=>t.requestId===data.requestId&&t.sellerId===actor.id);if(previous.length)return {quantity:previous.length};
-      const tickets=Array.from({length:ticketQuantity(data.packageId,data.quantity)},()=>({id:random(16),shortCode:newShortCode(),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:data.name?.trim()?{name:data.name.trim().slice(0,80)}:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return {quantity:tickets.length};
+      const quantity=ticketQuantity(data.packageId,data.quantity);if(data.packageId===invitationPackageId)allocateInvitations(state.tickets.filter(t=>isInvitation(t)&&t.status!=='cancelled').length,quantity);
+      const tickets=Array.from({length:quantity},()=>({id:random(16),shortCode:newShortCode(),token:random(32),claimCode:random(16),packageId:data.packageId,sellerId:actor.id,sellerName:actor.name,status:'pending',buyer:data.name?.trim()?{name:data.name.trim().slice(0,80)}:null,requestId:data.requestId,createdAt:new Date().toISOString(),usedAt:null}));state.tickets.push(...tickets);save();return {quantity:tickets.length};
     }
     const t=state.tickets.find(t=>['approve','cancel','markSent','requestApproval'].includes(action)?t.id===data.id:(t.token===data.code||t.shortCode===data.code));if(!t)throw new Error('Entrada no encontrada.');
-    if(['markSent','requestApproval'].includes(action)){if(!['seller','supreme'].includes(actor.role)||(actor.role!=='supreme'&&t.sellerId!==actor.id))throw new Error('No tienes permiso sobre esta entrada.');if(t.status!=='pending')throw new Error('Solo se modifican entradas pendientes.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';t[field] ||=new Date().toISOString();if(action==='requestApproval')t.approvalRequestedBy=actor.id;save();return {};}
+    if(['markSent','requestApproval'].includes(action)){if(!['seller','supreme'].includes(actor.role)||(actor.role!=='supreme'&&t.sellerId!==actor.id))throw new Error('No tienes permiso sobre esta entrada.');if(t.status!=='pending'&&!(action==='markSent'&&isInvitation(t)&&t.status==='valid'))throw new Error('Esta entrada ya no permite marcar el envío.');if(action==='requestApproval'&&isInvitation(t))throw new Error('Las cortesías se activan sin solicitar pago.');const field=action==='markSent'?'sentAt':'approvalRequestedAt';t[field] ||=new Date().toISOString();if(action==='requestApproval')t.approvalRequestedBy=actor.id;save();return {};}
     if(action==='approve'){supreme();if(t.status!=='pending')throw new Error('Solo se aprueban entradas pendientes.');t.status='valid';t.approvedAt=new Date().toISOString();save();return {};}
     if(action==='cancel'){if(actor.role!=='supreme')throw new Error('Solo el organizador puede anular.');if(!['pending','valid'].includes(t.status))throw new Error('Solo se invalidan entradas pendientes o aprobadas.');t.status='cancelled';save();return {};}
     if(action==='lookup'||action==='validate'){if(!['supreme','validator'].includes(actor.role))throw new Error('No tienes permiso de validación.');if(action==='validate'){if(t.status!=='valid')throw new Error('QR utilizado, invalidado o pendiente de aprobación.');t.status='used';t.usedAt=new Date().toISOString();t.validatedBy=actor.id;save();}return publicTicket(t);}

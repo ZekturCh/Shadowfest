@@ -24,6 +24,112 @@ test('cancelling approved ticket reverses count; pending cancellation does not',
 
 test('batch of ten stays pending and short codes resolve only for staff or their seller',async()=>{const ids=await issue('seller',10);assert.equal(ids.length,10);const first=(await getDoc(r(db('seller'),'tickets',ids[0]))).data();assert.match(first.shortCode,/^[A-HJ-NP-Z2-9]{6}$/);await assertSucceeds(getDoc(r(db('door'),'codes',first.shortCode)));await assertFails(getDoc(r(db(),'codes',first.shortCode)));await assertFails(getDoc(r(db('other'),'codes',first.shortCode)));await assertFails(getDocs(collection(db('door'),'shadowfest_live/2026/codes')));await assertFails(updateDoc(r(db('seller'),'codes',first.shortCode),{token:ids[1]}));await assertFails(updateDoc(r(db('seller'),'tickets',ids[0]),{shortCode:'K7M9Q2'}));assert.equal((await getDocs(query(collection(db('seller'),'shadowfest_live/2026/tickets'),where('sellerId','==','seller')))).size,10);});
 
+async function issueInvitations(count=1,uid='admin',base=uid+'_'+randomBytes(16).toString('hex')) {
+  const client=db(uid),ids=[];
+  for(let offset=0;offset<count;offset+=3) {
+    const size=Math.min(3,count-offset),requestId=base+'_'+Math.floor(offset/3),entries=Array.from({length:size},()=>({id:randomBytes(32).toString('hex'),shortCode:newShortCode()}));
+    const part=await runTransaction(client,async tx=>{
+      const previous=await tx.get(r(client,'requests',requestId));
+      if(previous.exists()) return previous.data().ids;
+      const quota=await tx.get(r(client,'meta','invitations'));
+      await Promise.all(entries.map(t=>tx.get(r(client,'codes',t.shortCode))));
+      tx.set(r(client,'meta','invitations'),{allocated:(quota.exists()?quota.data().allocated:0)+size,lastRequest:requestId,lastTicket:null,updatedAt:serverTimestamp()});
+      tx.set(r(client,'requests',requestId),{sellerId:uid,packageId:'invitation',ids:entries.map(t=>t.id),quantity:count,createdAt:serverTimestamp()});
+      for(const {id,shortCode} of entries) {
+        tx.set(r(client,'tickets',id),{token:id,shortCode,sellerId:uid,sellerName:uid,packageId:'invitation',status:'pending',buyer:null,createdAt:serverTimestamp(),usedAt:null,requestId});
+        tx.set(r(client,'passes',id),{token:id,shortCode,name:'Sin nombre',packageId:'invitation',status:'pending',registered:false});
+        tx.set(r(client,'codes',shortCode),{token:id,sellerId:uid});
+      }
+      return entries.map(t=>t.id);
+    });
+    ids.push(...part);
+  }
+  return ids;
+}
+async function cancelInvitation(id) {
+  const client=db('admin');
+  return runTransaction(client,async tx=>{
+    const ticket=await tx.get(r(client,'tickets',id)),quota=await tx.get(r(client,'meta','invitations')),sales=await tx.get(r(client,'meta','sales'));
+    tx.update(r(client,'tickets',id),{status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:'admin'});
+    tx.update(r(client,'passes',id),{status:'cancelled'});
+    tx.set(r(client,'meta','invitations'),{allocated:quota.data().allocated-1,lastRequest:null,lastTicket:id,updatedAt:serverTimestamp()});
+    if(ticket.data().status==='valid') {
+      const approved=sales.data().approved-1;
+      tx.set(r(client,'meta','sales'),{approved,initialSold:110,lastTicket:id,updatedAt:serverTimestamp()});
+      tx.set(r(client,'publicStats','sales'),{approved,initialSold:110,updatedAt:serverTimestamp()});
+    }
+  });
+}
+async function seedQuota(allocated) {
+  await env.withSecurityRulesDisabled(c=>setDoc(r(c.firestore(),'meta','invitations'),{allocated,lastRequest:null,lastTicket:null,updatedAt:serverTimestamp()}));
+}
+test('only supreme can issue courtesy batches; retries preserve the same QR and quota',async()=>{
+  const request='admin_'+randomBytes(16).toString('hex'),ids=await issueInvitations(10,'admin',request);
+  assert.equal(ids.length,10);
+  assert.deepEqual(await issueInvitations(10,'admin',request),ids);
+  assert.equal((await getDoc(r(db('admin'),'meta','invitations'))).data().allocated,10);
+  await assertFails(issueInvitations(1,'seller'));
+  await assertFails(getDoc(r(db(),'meta','invitations')));
+  await assertFails(getDocs(query(collection(db('seller'),'shadowfest_live/2026/tickets'),where('packageId','==','invitation'))));
+  await assertFails(getDocs(collection(db(),'shadowfest_live/2026/passes')));
+  const ticket=(await getDoc(r(db('admin'),'tickets',ids[0]))).data();
+  assert.equal(ticket.packageId,'invitation');
+  assert.equal(ticket.status,'pending');
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).exists(),false);
+  await assertFails(updateDoc(r(db('admin'),'tickets',ids[0]),{packageId:'general'}));
+});
+test('courtesy activation counts once, accepts optional name and delivery without a payment request',async()=>{
+  const [id]=await issueInvitations();
+  const visitor=db(),buyer=writeBatch(visitor);
+  buyer.update(r(visitor,'tickets',id),{buyer:{name:'Invitada',source:'buyer',registeredAt:serverTimestamp(),consentVersion:'2026-10-name-v1'}});
+  buyer.update(r(visitor,'passes',id),{name:'Invitada',registered:true});
+  await buyer.commit();
+  await assertFails(updateDoc(r(db('admin'),'tickets',id),{approvalRequestedAt:serverTimestamp(),approvalRequestedBy:'admin'}));
+  await approve(id);
+  await assertSucceeds(updateDoc(r(db('admin'),'tickets',id),{sentAt:serverTimestamp()}));
+  await assertFails(approve(id));
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);
+  assert.equal((await getDoc(r(db(),'passes',id))).data().name,'Invitada');
+});
+test('courtesy quota enforces 110 in the rules and concurrent attempts cannot exceed the cap',async()=>{
+  await seedQuota(109);
+  const results=await Promise.allSettled([issueInvitations(),issueInvitations()]);
+  assert.equal(results.filter(x=>x.status==='fulfilled').length,1);
+  assert.equal((await getDoc(r(db('admin'),'meta','invitations'))).data().allocated,110);
+  await assertFails(issueInvitations());
+  await assertFails(updateDoc(r(db('admin'),'meta','invitations'),{allocated:0,updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(r(db('admin'),'meta','invitations'),{allocated:111,updatedAt:serverTimestamp()}));
+});
+test('courtesy cancellation frees one place atomically; approved cancellation reverses its count',async()=>{
+  const ids=await issueInvitations(5),client=db('admin');
+  const incomplete=writeBatch(client);
+  incomplete.update(r(client,'tickets',ids[0]),{status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:'admin'});
+  incomplete.update(r(client,'passes',ids[0]),{status:'cancelled'});
+  await assertFails(incomplete.commit());
+  await cancelInvitation(ids[0]);
+  assert.equal((await getDoc(r(client,'meta','invitations'))).data().allocated,4);
+  await approve(ids[1]);
+  await cancelInvitation(ids[1]);
+  assert.equal((await getDoc(r(client,'meta','invitations'))).data().allocated,3);
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,0);
+  await assertFails(cancelInvitation(ids[1]));
+});
+test('approved courtesy passes enter only once and used passes retain their allocated place',async()=>{
+  const [id]=await issueInvitations();
+  await approve(id);
+  const client=db('door'),admit=()=>runTransaction(client,async tx=>{
+    const ticket=await tx.get(r(client,'tickets',id));
+    if(ticket.data().status!=='valid') throw new Error('not valid');
+    tx.update(r(client,'tickets',id),{status:'used',usedAt:serverTimestamp(),validatedBy:'door'});
+    tx.update(r(client,'passes',id),{status:'used'});
+  });
+  const result=await Promise.allSettled([admit(),admit()]);
+  assert.equal(result.filter(x=>x.status==='fulfilled').length,1);
+  await assertFails(cancelInvitation(id));
+  assert.equal((await getDoc(r(db('admin'),'meta','invitations'))).data().allocated,1);
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);
+});
+
 function orderBatch(client,order){const batch=writeBatch(client);batch.set(r(client,'consumptions',order.token),order);batch.set(r(client,'consumptionPasses',order.token),publicConsumption(order));batch.set(doc(client,`shadowfest_live/2026/passes/${order.ticketId}/consumptions/${order.token}`),publicConsumption(order));return batch;}
 async function createOrder(ticketId,uid='admin'){const token=randomBytes(32).toString('hex'),ticket=(await getDoc(r(db('admin'),'tickets',ticketId))).data(),order={token,ticketId,ticketCode:ticket.shortCode,buyerName:ticket.buyer?.name||'Sin nombre',description:'2 bebidas y 1 comida',amountCents:2550,status:'pending',shortCode:null,createdAt:serverTimestamp(),createdBy:uid||'admin',redeemedAt:null};await orderBatch(db(uid),order).commit();return token;}
 async function approveOrder(id,uid='admin',shortCode=newShortCode()){const client=db(uid);await runTransaction(client,async tx=>{const snap=await tx.get(r(client,'consumptions',id));const order={...snap.data(),status:'valid',shortCode,approvedAt:serverTimestamp(),approvedBy:uid};tx.update(r(client,'consumptions',id),order);tx.update(r(client,'consumptionPasses',id),publicConsumption(order));tx.update(doc(client,`shadowfest_live/2026/passes/${order.ticketId}/consumptions/${id}`),publicConsumption(order));tx.set(r(client,'consumptionCodes',shortCode),{token:id});});}
