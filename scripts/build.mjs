@@ -5,7 +5,7 @@ await build({entryPoints:[new URL('src/firebase-platform.js',root).pathname.repl
 for(const name of ['qr-scanner.min.js','qr-scanner-worker.min.js'])await cp(new URL('node_modules/qr-scanner/'+name,root),new URL('vendor/'+name,root));
 await cp(new URL('node_modules/qr-scanner/LICENSE',root),new URL('vendor/qr-scanner.LICENSE',root));
 const excluded=new Set(['platform-demo.js','demo-store.js']);
-for(const name of await readdir(root)){if(/\.(html|css|js)$/.test(name)&&!excluded.has(name))await cp(new URL(name,root),new URL(name,dist));}
+for(const name of await readdir(root)){if(/\.(html|css|js|ico)$/.test(name)&&!excluded.has(name))await cp(new URL(name,root),new URL(name,dist));}
 for(const dir of ['assets','vendor'])await cp(new URL(dir+'/',root),new URL(dir+'/',dist),{recursive:true});
 // Deployed build always uses Firebase; local test records are never published.
 await writeFile(new URL('runtime.js',dist),"export const localDemo=false;\n");

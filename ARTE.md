@@ -1,5 +1,22 @@
 # Arte de Shadow Fest
 
+## Favicon SF
+
+Monograma SF creado con la herramienta integrada de generación de imágenes, usando el logo gótico de neón de la organización como referencia de estilo. Fondo negro, letras fucsia y violeta. Se integra en las cinco páginas, tanto en la pestaña del navegador como al guardar la web en el celular.
+
+Archivos: `assets/brand/sf-monogram.png` (512 × 512), `assets/brand/favicon-32.png`, `assets/brand/apple-touch-icon.png` (180 × 180) y `favicon.ico` (16, 32, 48 y 64 px). La conversión y reducción de tamaño se realizaron con Pillow; el diseño se generó con la herramienta integrada.
+
+Prompt final:
+
+> Use case: logo-brand.
+> Asset type: production website favicon master, square image.
+> Input image 1: STYLE REFERENCE ONLY — the existing Shadow Fest gothic magenta neon logo. Create a new compact monogram from that brand, not the full wordmark.
+> Primary request: a professional, extremely readable "SF" monogram for ShadowFest. Exact text: "SF", exactly two uppercase letters side by side, S on the left, F on the right. They must be immediately recognizable at 16 and 32 pixels.
+> Composition: one centered SF mark occupying 86% of the square; generous separation between the letters and strong thick letter strokes, large solid luminous faces. Symmetric balanced footprint. Flat straight-on icon, no perspective. Plain solid near-black background extending to every edge.
+> Style: simplified sharp gothic display lettering with restrained pointed serifs, inspired by the reference; bright fuchsia and violet neon outlines, pale pink illuminated letter faces and a few clean metallic highlights. High contrast and polished nightclub identity. Favor substantial clear shapes over intricate texture or ornament.
+> Constraints: only SF, no extra words, no ring, no stars, no illustration, no tiny lines, no surrounding flourishes, no mockup, no watermark. Keep glow tight so the actual characters stay crisp. The finished asset must work as a tiny browser favicon and as an iPhone home-screen icon.
+
+
 ## Mapa profesional del evento
 
 Nueva visualización creada con la herramienta integrada de generación de imágenes, usando la propuesta espacial del organizador como referencia. Conserva la relación entre DJ, general, VIP, baños, comida e ingreso. Se muestra completo en la web, con un enlace para ampliarlo y una nota de distribución conceptual.
