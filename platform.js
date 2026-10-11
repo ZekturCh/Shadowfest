@@ -1,11 +1,11 @@
-import { localDemo } from './runtime.js?v=20261011';
-export { extractTicketCode as extractCode } from './ticket-code.js?v=20261011';
+import { localDemo } from './runtime.js?v=20261011s';
+export { extractTicketCode as extractCode } from './ticket-code.js?v=20261011s';
 export { localDemo };
 const sessionKey = 'shadowfest-session-v2';
 let token = sessionStorage.getItem(sessionKey) || '';
 export async function request(action, data = {}) {
-  if (localDemo) { const { demoRequest } = await import('./platform-demo.js?v=20261011'); return demoRequest(action, data, token); }
-  const { firebaseRequest } = await import('./platform-firebase.js?v=20261011');
+  if (localDemo) { const { demoRequest } = await import('./platform-demo.js?v=20261011s'); return demoRequest(action, data, token); }
+  const { firebaseRequest } = await import('./platform-firebase.js?v=20261011s');
   return firebaseRequest(action, data);
 }
 export async function login(code) { const result = await request('login', { code }); token = result.token; sessionStorage.setItem(sessionKey, token); return result.actor; }

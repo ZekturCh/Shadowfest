@@ -1,5 +1,6 @@
-import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011';
-import { initialSold } from './surprises.js?v=20261011';
+import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011s';
+import { initialSold } from './surprises.js?v=20261011s';
+import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011s';
 const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});
@@ -12,6 +13,7 @@ export async function demoRequest(action,data,token){
     const save=()=>localStorage.setItem(key,JSON.stringify(state));
     if(action==='stats') return {sold:initialSold+state.tickets.filter(t=>['valid','used'].includes(t.status)).length,initialSold};
     if(action==='login') {
+      data.code=normalizeAccessCode(data.code);
       // Only served on localhost; production never imports this module.
       const access=data.code===localSecret?{id:'supreme',name:'Organizador supremo',role:'supreme',active:true}:state.accesses.find(a=>a.code===data.code&&a.active);
       if(!access) throw new Error('Código incorrecto o revocado.');
@@ -32,7 +34,7 @@ export async function demoRequest(action,data,token){
     if(action==='logout'){state.sessions=state.sessions.filter(s=>s.token!==token);save();return {};}
     const supreme=()=>{if(actor.role!=='supreme')throw new Error('Solo el organizador supremo puede realizar esta acción.');};
     if(action==='accessList'){supreme();return state.accesses.map(({code,...a})=>a);}
-    if(action==='accessCreate'){supreme();const name=String(data.name||'').trim(),code=String(data.code||'').trim();if(name.length<2||name.length>60||!/^\S{8,64}$/.test(code)||!['seller','validator'].includes(data.role))throw new Error('Usa un nombre y un código de 8 a 64 caracteres sin espacios.');if(state.accesses.some(a=>a.code===code))throw new Error('El código ya existe.');const a={id:random(16),name,code,role:data.role,active:true,createdAt:new Date().toISOString()};state.accesses.push(a);save();return {id:a.id};}
+    if(action==='accessCreate'){supreme();const name=String(data.name||'').trim(),code=normalizeAccessCode(data.code);if(name.length<2||name.length>60||!validStaffCode(name,code,data.role))throw new Error('Usa la inicial + 26 + tres letras para vendedores, o un código de 8 a 64 caracteres.');if(state.accesses.some(a=>a.code===code))throw new Error('El código ya existe.');const a={id:random(16),name,code,role:data.role,active:true,createdAt:new Date().toISOString()};state.accesses.push(a);save();return {id:a.id};}
     if(action==='accessRevoke'){supreme();const a=state.accesses.find(a=>a.id===data.id);if(!a)throw new Error('Acceso no encontrado.');a.active=false;save();return {};}
     if(action==='list'){if(actor.role==='validator')throw new Error('Acceso solo de validación.');return state.tickets.filter(t=>actor.role==='supreme'||t.sellerId===actor.id);}
     if(action==='issue'){

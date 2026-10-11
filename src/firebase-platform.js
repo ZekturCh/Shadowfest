@@ -2,6 +2,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/auth';
 import { getFirestore, collection, doc, getDoc, getDocs, query, where, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { newShortCode, shortCodePattern, ticketQuantity } from '../ticket-code.js';
+import { normalizeAccessCode, validStaffCode } from '../staff-code.js';
 
 export const firebaseConfig={apiKey:'AIzaSyCL4RyZwSHQighzQ61qbaGfK9jCiIfB30U',authDomain:'comecome-ab1a0.firebaseapp.com',projectId:'comecome-ab1a0',storageBucket:'comecome-ab1a0.firebasestorage.app',messagingSenderId:'399645583727',appId:'1:399645583727:web:2e777325eaa14ed559a09a'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -17,7 +18,7 @@ const publicData=t=>({name:t.buyer?.name||'Sin nombre',packageId:t.packageId,sta
 async function resolveCode(code){if(shortCodePattern.test(code||'')){const snap=await getDoc(ref('codes',code));requireValue(snap.exists(),'Código de entrada no encontrado.');return snap.data().token;}requireValue(/^[a-f0-9]{64}$/.test(code||''),'Código QR inválido.');return code;}
 async function publicTicket(code){requireValue(/^[a-f0-9]{64}$/.test(code||''),'Código QR inválido.');const snap=await getDoc(ref('passes',code));requireValue(snap.exists(),'Entrada no encontrada.');return {id:code,...plain(snap.data())};}
 async function execute(action,data){
-  if(action==='login'){await ready;await signInWithEmailAndPassword(auth,await codeEmail(data.code),data.code);return {actor:await actor(),token:'firebase-session'};}
+  if(action==='login'){const code=normalizeAccessCode(data.code);await ready;await signInWithEmailAndPassword(auth,await codeEmail(code),code);return {actor:await actor(),token:'firebase-session'};}
   if(action==='logout'){await signOut(auth);return {};}
   if(action==='stats'){const snap=await getDoc(ref('publicStats','sales'));return {sold:110+(snap.exists()?snap.data().approved:0),initialSold:110};}
   if(action==='ticket')return publicTicket(data.code);
@@ -30,7 +31,7 @@ async function execute(action,data){
   if(action==='me')return a;
   if(action==='accessList'){allow(a,['supreme']);return (await getDocs(coll('staff'))).docs.filter(s=>s.data().role!=='supreme').map(s=>({id:s.id,...plain(s.data())}));}
   if(action==='accessCreate'){
-    allow(a,['supreme']);const name=String(data.name||'').trim(),code=String(data.code||'').trim();requireValue(name.length>=2&&name.length<=60&&/^\S{8,64}$/.test(code)&&['seller','validator'].includes(data.role),'Usa un nombre y código de 8 a 64 caracteres sin espacios.');
+    allow(a,['supreme']);const name=String(data.name||'').trim(),code=normalizeAccessCode(data.code);requireValue(name.length>=2&&name.length<=60&&validStaffCode(name,code,data.role),data.role==='seller'?'Usa la inicial del vendedor + 26 + tres letras, o un código de 8 a 64 caracteres sin espacios.':'Usa un nombre y código de 8 a 64 caracteres sin espacios.');
     const secondary=initializeApp(firebaseConfig,'staff-'+random(8)),secondaryAuth=getAuth(secondary);let user;
     try{await setPersistence(secondaryAuth,inMemoryPersistence);user=(await createUserWithEmailAndPassword(secondaryAuth,await codeEmail(code),code)).user;await writeBatch(db).set(ref('staff',user.uid),{name,role:data.role,active:true,createdAt:serverTimestamp()}).commit();return {id:user.uid};}
     catch(error){if(user)await deleteUser(user).catch(()=>{});throw error;}finally{await deleteApp(secondary);}

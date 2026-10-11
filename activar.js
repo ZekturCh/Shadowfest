@@ -1,5 +1,5 @@
-import { request, ticketUrl, showMode } from './platform.js?v=20261011';
-import { event } from './config.js?v=20261011';
+import { request, ticketUrl, showMode } from './platform.js?v=20261011s';
+import { event } from './config.js?v=20261011s';
 showMode();let claimCode='';
 const feedback=document.querySelector('#claim-status');
 document.querySelector('#claim-code').value=location.hash.slice(1);

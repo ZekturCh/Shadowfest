@@ -1,8 +1,8 @@
-import { event } from './config.js?v=20261011';
-import { request, extractCode } from './platform.js?v=20261011';
-import { setupAccess } from './access.js?v=20261011';
-import { withBusy } from './busy.js?v=20261011';
-import QrScanner from './vendor/qr-scanner.min.js?v=20261011';
+import { event } from './config.js?v=20261011s';
+import { request, extractCode } from './platform.js?v=20261011s';
+import { setupAccess } from './access.js?v=20261011s';
+import { withBusy } from './busy.js?v=20261011s';
+import QrScanner from './vendor/qr-scanner.min.js?v=20261011s';
 setupAccess(['supreme','validator'],async()=>{});
 let currentCode='',scanner=null,scanGeneration=0,lookupGeneration=0;
 const video=document.querySelector('#scanner-video'),scanStatus=document.querySelector('#scan-status'),feedback=document.querySelector('#validation-status'),confirmButton=document.querySelector('#confirm-entry'),lookupButton=document.querySelector('#lookup-form button'),startButton=document.querySelector('#start-camera');

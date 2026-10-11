@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {newSellerAccessCode,normalizeAccessCode,validStaffCode} from '../staff-code.js';
+test('seller codes use accented names, year 26 and three random letters',()=>{for(const [name,first] of [['Angélica','A'],['Jesús','J'],['Diego','D'],['Lucía','L'],['Sebastián','S'],['César','C']]){const code=newSellerAccessCode(name);assert.match(code,new RegExp('^'+first+'26[A-HJ-NP-Z]{3}$'));assert.ok(validStaffCode(name,code,'seller'));}assert.throws(()=>newSellerAccessCode(''));});
+test('short seller codes normalize case without changing master and legacy credentials',()=>{assert.equal(normalizeAccessCode(' a26krm '),'A26KRM');assert.equal(normalizeAccessCode('LMS2026'),'LMS2026');assert.equal(normalizeAccessCode('LegacyCodeCase7'),'LegacyCodeCase7');assert.ok(validStaffCode('Angélica','a26krm','seller'));assert.equal(validStaffCode('Diego','A26KRM','seller'),false);assert.equal(validStaffCode('Angélica','A26KRM','validator'),false);assert.ok(validStaffCode('Puerta','LegacyCodeCase7','validator'));assert.equal(validStaffCode('Angélica','A26KR','seller'),false);});
