@@ -1,8 +1,8 @@
-import { event } from './config.js?v=20261006b';
-import { saleStage, requestDetails, earlyBirdEnds } from './sales.js?v=20261006c';
-import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261006b';
-import { request, localDemo } from './platform.js?v=20261006b';
-import { surprises, initialSold } from './surprises.js?v=20261006b';
+import { event } from './config.js?v=20261011';
+import { saleStage, requestDetails, earlyBirdEnds } from './sales.js?v=20261011';
+import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261011';
+import { request, localDemo } from './platform.js?v=20261011';
+import { surprises, initialSold } from './surprises.js?v=20261011';
 const unlockCards = document.querySelector('#unlock-cards');
 function renderUnlocks(sold) {
   document.querySelector('#sold-count').textContent=sold;
@@ -81,7 +81,7 @@ function updateCountdown() {
     document.querySelector('#presale-countdown').classList.toggle('expired', expired);
     document.querySelector('#countdown-kicker').textContent = expired ? 'PREVENTA REGULAR' : 'PREVENTA EXTENDIDA';
     document.querySelector('#countdown-title').textContent = expired ? 'La noche sigue. Tu entrada está a S/25.' : 'El precio de S/20 se acaba en';
-    document.querySelector('#countdown-note').textContent = expired ? 'Compra por WhatsApp y asegura tu entrada.' : '13 OCT · 11:59 p. m. · hora de Lima';
+    document.querySelector('#countdown-note').textContent = expired ? 'Compra por WhatsApp y asegura tu entrada.' : '20 OCT · 11:59 p. m. · hora de Lima';
     updatePrices();
   }
 }

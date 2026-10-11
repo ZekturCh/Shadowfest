@@ -2,6 +2,8 @@
 
 Proyecto `comecome-ab1a0`, Cloud Firestore (default), Firebase Authentication normal y Firebase Hosting. No se usan Cloud Functions, Realtime Database, Analytics, pagos automáticos ni Secret Manager. No se habilitó Blaze.
 
+La dirección principal es `https://shadowfest.web.app/`. El sitio Hosting `shadowfest` comparte Firestore y Authentication con el sitio anterior. El ID técnico del proyecto sigue siendo `comecome-ab1a0`; no se migraron ni duplicaron entradas o accesos. Los dominios de ambos sitios y GitHub Pages se conservan autorizados. `firebase.json` despliega los targets `shadowfest` y `legacy` con el mismo build para mantener los enlaces anteriores.
+
 ## Acceso por códigos
 
 La pantalla sigue pidiendo únicamente un código. Internamente Firebase Authentication comprueba una identidad de correo/contraseña: el correo técnico es SHA-256 del código + `@shadowfest.invalid`. El código no se almacena en Firestore, GitHub ni en el bundle. La sesión usa almacenamiento de sesión del navegador; el permiso real está en Firestore y se consulta en cada operación. Revocar un vendedor bloquea sus operaciones aunque conserve una sesión de Auth.

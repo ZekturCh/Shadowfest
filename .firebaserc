@@ -1,1 +1,18 @@
-{"projects":{"default":"comecome-ab1a0"}}
+{
+  "projects": {
+    "default": "comecome-ab1a0"
+  },
+  "targets": {
+    "comecome-ab1a0": {
+      "hosting": {
+        "shadowfest": [
+          "shadowfest"
+        ],
+        "legacy": [
+          "comecome-ab1a0"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

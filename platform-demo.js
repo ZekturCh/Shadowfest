@@ -1,5 +1,5 @@
-import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261006b';
-import { initialSold } from './surprises.js?v=20261006b';
+import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011';
+import { initialSold } from './surprises.js?v=20261011';
 const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});

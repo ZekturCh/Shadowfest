@@ -1,7 +1,7 @@
-import {withBusy,isBusy} from './busy.js?v=20261006b';
-import { event } from './config.js?v=20261006b';
-import { request, ticketUrl } from './platform.js?v=20261006b';
-import { setupAccess } from './access.js?v=20261006b';
+import {withBusy,isBusy} from './busy.js?v=20261011';
+import { event } from './config.js?v=20261011';
+import { request, ticketUrl } from './platform.js?v=20261011';
+import { setupAccess } from './access.js?v=20261011';
 let actor,tickets=[],issueRequest='';
 const status=document.querySelector('#admin-status');
 const labels={pending:'Pendiente',valid:'Aprobada',used:'Utilizada',cancelled:'Invalidada'};

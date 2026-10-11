@@ -1,5 +1,5 @@
 export const event = {
-  name: 'Shadow Fest 4.0', date: '31 OCT 2026', location: 'Alameda Los Pinos 327 · Lima',
+  name: 'Shadow Fest 4.0', date: '31 OCT 2026', location: 'Pandu House · Av. Alameda del Pino 327, Chorrillos, Lima, Perú', startTime: '22:00', instagram: 'https://www.instagram.com/shadow.festt/',
   minimumAge: 18, whatsapp: '51955121011', currency: 'PEN',
   packages: [
     { id: 'general', name: 'General', tag: 'TU NOCHE EMPIEZA AQUÍ', description: 'Acceso a la fiesta + participación en el sorteo de uno de los 5 baldes de chelas.' },
