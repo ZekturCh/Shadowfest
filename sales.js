@@ -3,7 +3,8 @@ export function saleStage(now = new Date()) {
   return now < earlyBirdEnds ? { price: 20, label: 'Preventa hasta el 20 OCT', closed: false } : { price: 25, label: 'Venta regular', closed: false };
 }
 export function packagePrice(id, now = new Date()) {
-  const multiplier = { general: 1, crew: 6, vip: 2 }[id];
+  if (id === 'crew') return now < earlyBirdEnds ? 145 : 150;
+  const multiplier = { general: 1, vip: 2 }[id];
   if (!multiplier) throw new Error('Selecciona una entrada válida.');
   return saleStage(now).price * multiplier;
 }

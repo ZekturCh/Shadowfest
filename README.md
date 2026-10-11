@@ -33,7 +33,7 @@ npm run build
 
 Ver [FIREBASE.md](FIREBASE.md) para reglas, arquitectura, pruebas de permisos y despliegue. No publicar archivos privados de accesos ni secretos. QR de 256 bits con enlaces privados; el contador público no expone entradas.
 
-Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 20 de octubre inclusive (Lima), S/25 desde el 21 y S/30 en puerta. VIP S/40/S/50/S/60 según etapa. Pack de seis S/120/S/150/S/180 con sixpack incluido. Metas 150/200/300 propuestas; las sorpresas del código público no son secretos. El mapa se retiró hasta contar con una referencia fiel.
+Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 20 de octubre inclusive (Lima), S/25 desde el 21 y S/30 en puerta. VIP S/40/S/50/S/60 según etapa. Pack de seis S/145/S/150/S/180 con sixpack incluido. Metas 150/200/300 propuestas; las sorpresas del código público no son secretos. El mapa se retiró hasta contar con una referencia fiel.
 
 ## Operación en puerta y lotes
 
@@ -47,4 +47,4 @@ Los nuevos códigos sugeridos para vendedores usan la inicial sin tilde, `26` y 
 
 ## Página de venta
 
-El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack se vende como seis entradas generales, sin descuento adicional en las entradas, con el sixpack incluido. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados (incluye usados, excluye anulados); no añade una base histórica.
+El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados (incluye usados, excluye anulados); no añade una base histórica.

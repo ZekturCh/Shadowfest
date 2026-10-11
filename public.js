@@ -1,5 +1,5 @@
 import { event } from './config.js?v=20261011-sale3';
-import { saleStage, packagePrice, requestDetails, earlyBirdEnds } from './sales.js?v=20261011-sale3';
+import { saleStage, packagePrice, requestDetails, earlyBirdEnds } from './sales.js?v=20261011-pack145';
 import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261011-sale3';
 import { request, localDemo } from './platform.js?v=20261011-sale3';
 import { surprises } from './surprises.js?v=20261011-sale3';

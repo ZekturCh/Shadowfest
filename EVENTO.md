@@ -8,7 +8,7 @@ S/20 hasta el 20 de octubre inclusive, hora de Lima. S/25 desde el 21 de octubre
 
 ## Pack
 
-6 entradas generales + un six pack de chela. Precio establecido para esta actualización: S/120 hasta el 20 OCT, S/150 desde el 21 OCT, S/180 en puerta. Equivale a seis entradas generales; el sixpack de Pilsen 355 ml está incluido.
+6 entradas generales + un six pack de chela. Precio establecido para esta actualización: S/145 hasta el 20 OCT, S/150 desde el 21 OCT, S/180 en puerta. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen de 355 ml.
 
 ## VIP
 
