@@ -4,6 +4,7 @@ import { getFirestore, collection, doc, getDoc, getDocs, query, where, runTransa
 import { newShortCode, shortCodePattern, ticketQuantity } from '../ticket-code.js';
 import { normalizeAccessCode, validStaffCode } from '../staff-code.js';
 import { checkConsumption, publicConsumption } from '../consumption.js';
+import { confirmedSales } from '../public-stats.js';
 
 export const firebaseConfig={apiKey:'AIzaSyCL4RyZwSHQighzQ61qbaGfK9jCiIfB30U',authDomain:'comecome-ab1a0.firebaseapp.com',projectId:'comecome-ab1a0',storageBucket:'comecome-ab1a0.firebasestorage.app',messagingSenderId:'399645583727',appId:'1:399645583727:web:2e777325eaa14ed559a09a'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
@@ -23,7 +24,7 @@ async function publicTicket(code){requireValue(/^[a-f0-9]{64}$/.test(code||''),'
 async function execute(action,data){
   if(action==='login'){const code=normalizeAccessCode(data.code);await ready;await signInWithEmailAndPassword(auth,await codeEmail(code),code);return {actor:await actor(),token:'firebase-session'};}
   if(action==='logout'){await signOut(auth);return {};}
-  if(action==='stats'){const snap=await getDoc(ref('publicStats','sales'));return {sold:110+(snap.exists()?snap.data().approved:0),initialSold:110};}
+  if(action==='stats'){const snap=await getDoc(ref('publicStats','sales'));return confirmedSales(snap.exists()?snap.data():{});}
   if(action==='ticket')return publicTicket(data.code);
   if(action==='consumptionsForTicket'){await publicTicket(data.code);return (await getDocs(collection(db,`${path}/passes/${data.code}/consumptions`))).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
   if(action==='consumptionPass'){requireValue(/^[a-f0-9]{64}$/.test(data.code||''),'Enlace de canje inválido.');const snap=await getDoc(ref('consumptionPasses',data.code));requireValue(snap.exists(),'Pedido no encontrado.');return {id:snap.id,...plain(snap.data())};}

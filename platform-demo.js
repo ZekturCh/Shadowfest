@@ -1,5 +1,5 @@
 import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011c';
-import { initialSold } from './surprises.js?v=20261011c';
+import { confirmedSales } from './public-stats.js?v=20261011-sale3';
 import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011c';
 import {checkConsumption,publicConsumption} from './consumption.js?v=20261011c';
 const key='shadowfest-platform-v2';
@@ -12,7 +12,7 @@ export async function demoRequest(action,data,token){
   return navigator.locks.request(key,()=>{
     const state=read();state.consumptions ||= [];
     const save=()=>{localStorage.setItem(key,JSON.stringify(state));if(typeof window!=='undefined')window.dispatchEvent(new Event('shadowfest-change'));};
-    if(action==='stats') return {sold:initialSold+state.tickets.filter(t=>['valid','used'].includes(t.status)).length,initialSold};
+    if(action==='stats') return confirmedSales({approved:state.tickets.filter(t=>['valid','used'].includes(t.status)).length});
     if(action==='login') {
       data.code=normalizeAccessCode(data.code);
       // Only served on localhost; production never imports this module.

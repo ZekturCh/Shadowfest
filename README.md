@@ -6,7 +6,7 @@ Enlace principal: https://shadowfest.web.app/ . También disponible en https://z
 
 ## Pantallas
 
-- `index.html`: compra por WhatsApp al +51 955 121 011, experiencia y sorpresas desde 110 ventas.
+- `index.html`: compra por WhatsApp al +51 955 121 011, precios de General/VIP/pack, experiencia, carta prevista y contador de entradas aprobadas.
 - `admin.html`: admin supremo o vendedor, según su código. Vendedores ven solo sus entradas; admin crea accesos, revisa pagos y aprueba o invalida.
 - `qr.html#TOKEN`: QR individual, nombre opcional, solicitud de comida/bebidas por WhatsApp y pedidos del comprador.
 - `canje.html#TOKEN`: pedido y QR de canje, disponible al aprobar el pago.
@@ -16,7 +16,7 @@ Enlace principal: https://shadowfest.web.app/ . También disponible en https://z
 
 Cada QR queda asignado a quien lo genera, incluido el admin. El vendedor marca el enlace como enviado y solicita aprobación cuando el cliente confirma el pago. Solo la aprobación del admin suma una venta y habilita el QR para entrar. Un pack genera seis entradas individuales.
 
-Las precompras se acuerdan por WhatsApp, sin catálogo ni precios inventados. El supremo registra productos, cantidades, monto y la entrada asociada; luego aprueba el pago. Los pedidos se actualizan en vivo en la página del comprador. El QR de canje usa `SF-CANJE:XXXXXX` y el código manual `C-XXXXXX`; se rechaza en el control de ingreso. Entradas y consumos tienen estados independientes: un canje no registra el ingreso, ni suma entradas vendidas. Un pedido se entrega completo y una sola vez. Para corregir productos o monto, anular el pedido y registrar uno nuevo.
+Las precompras se acuerdan por WhatsApp. La carta prevista muestra las propuestas del presupuesto; productos, precios y disponibilidad se confirman antes de cobrar. El supremo registra productos, cantidades, monto y la entrada asociada; luego aprueba el pago. Los pedidos se actualizan en vivo en la página del comprador. El QR de canje usa `SF-CANJE:XXXXXX` y el código manual `C-XXXXXX`; se rechaza en el control de ingreso. Entradas y consumos tienen estados independientes: un canje no registra el ingreso, ni suma entradas vendidas. Un pedido se entrega completo y una sola vez. Para corregir productos o monto, anular el pedido y registrar uno nuevo.
 
 El admin muestra si el cliente registró su nombre, si se ingresó al generar o si todavía no tiene nombre. Los códigos nuevos se entregan por privado. El equipo inicial es Angélica, Jesús, Diego, Lucía, Sebastián y César; el botón de preparación evita duplicar nombres existentes.
 
@@ -33,7 +33,7 @@ npm run build
 
 Ver [FIREBASE.md](FIREBASE.md) para reglas, arquitectura, pruebas de permisos y despliegue. No publicar archivos privados de accesos ni secretos. QR de 256 bits con enlaces privados; el contador público no expone entradas.
 
-Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 20 de octubre inclusive (Lima), S/25 desde el 21 y S/30 en puerta. Precios pack/VIP pendientes. Metas 150/200/300 propuestas; las sorpresas del código público no son secretos. El mapa se retiró hasta contar con una referencia fiel.
+Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 20 de octubre inclusive (Lima), S/25 desde el 21 y S/30 en puerta. VIP S/40/S/50/S/60 según etapa. Pack de seis S/120/S/150/S/180 con sixpack incluido. Metas 150/200/300 propuestas; las sorpresas del código público no son secretos. El mapa se retiró hasta contar con una referencia fiel.
 
 ## Operación en puerta y lotes
 
@@ -44,3 +44,7 @@ Cada entrada tiene un código de puerta de seis caracteres aleatorios, mezclando
 El lector usa qr-scanner (MIT), con decodificador alternativo cuando no hay BarcodeDetector y opción de foto. Requiere HTTPS y permiso de cámara; el comportamiento de una cámara física de iPhone debe comprobarse en ese dispositivo.
 
 Los nuevos códigos sugeridos para vendedores usan la inicial sin tilde, `26` y tres letras aleatorias (seis caracteres). Los códigos de este formato aceptan mayúsculas o minúsculas al ingresar. Las credenciales largas anteriores conservan su distinción de mayúsculas; el admin y los validadores mantienen su formato. El código de vendedor es un acceso privado, distinto del código del QR para puerta. Al cambiar una credencial se conserva el UID y sus ventas; las claves reales se entregan por privado y nunca se versionan.
+
+## Página de venta
+
+El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack se vende como seis entradas generales, sin descuento adicional en las entradas, con el sixpack incluido. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados (incluye usados, excluye anulados); no añade una base histórica.

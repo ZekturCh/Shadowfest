@@ -8,11 +8,11 @@ S/20 hasta el 20 de octubre inclusive, hora de Lima. S/25 desde el 21 de octubre
 
 ## Pack
 
-6 entradas generales + un six pack de chela. Precio pendiente: no asumir que es seis veces la entrada individual.
+6 entradas generales + un six pack de chela. Precio establecido para esta actualización: S/120 hasta el 20 OCT, S/150 desde el 21 OCT, S/180 en puerta. Equivale a seis entradas generales; el sixpack de Pilsen 355 ml está incluido.
 
-## VIP — revelación gradual
+## VIP
 
-La web pública muestra solo un teaser. Precio y cupo pendientes. Los detalles aún no revelados se conservan en una nota local de trabajo, fuera del repositorio público.
+Tarifa confirmada: el doble de General en cada etapa (S/40 preventa, S/50 regular, S/60 puerta). Zona cómoda y tematizada, asientos limitados, prioridad en barra, zona de fotos, un shot para canjear, momento piñata y fiesta con cosplayers. El cupo VIP no está confirmado; no prometer un asiento por entrada.
 
 ## Experiencia
 
@@ -22,7 +22,7 @@ DJs invitados durante la noche. Concurso de disfraces: más creativo, más terro
 
 Las mochilas están permitidas. No se permite ingresar comida ni bebidas externas, ni pedir delivery al evento. Habrá venta de comida y bebidas dentro.
 
-Desde la página de una entrada aprobada se solicita la precompra por WhatsApp. La organización confirma productos, cantidades, disponibilidad y precio; el admin registra el pedido y aprueba el pago. El comprador recibe un QR distinto al de ingreso, de un solo canje para retirar todo el pedido. Catálogo y precios de consumos aún pendientes; no publicar productos o importes inventados. Reingreso, cambios y devoluciones siguen pendientes de confirmar.
+Desde la página de una entrada aprobada se solicita la precompra por WhatsApp. La organización confirma productos, cantidades, disponibilidad y precio; el admin registra el pedido y aprueba el pago. El comprador recibe un QR distinto al de ingreso, de un solo canje para retirar todo el pedido. La carta prevista muestra propuestas del nuevo presupuesto: Pilsen 355 ml S/9, sixpack S/50, Sangre de Medianoche (vodka, chicha morada, limón) S/18, Veneno Tropical (vodka, maracuyá, piña) S/18 y salchipapa S/13. Las recetas y disponibilidad final requieren confirmación de producción; el equipo confirma el pedido antes del pago. Reingreso, cambios y devoluciones siguen pendientes de confirmar.
 
 ## Referencias visuales
 
@@ -30,6 +30,8 @@ La propuesta y videos suministrados muestran patio, DJ en balcón, tentáculos d
 
 ## Datos necesarios para activar ventas
 
-WhatsApp configurado: +51 955 121 011. Pendientes: precios de pack/VIP, horarios, aforo y configuración del backend con cuentas del staff. Pago por transferencia coordinado por chat; emisión individual tras verificación manual. Producción está conectada a Firestore y Authentication; localhost mantiene una demo aislada.
+WhatsApp configurado: +51 955 121 011. Pendientes: hora de cierre, cupos por zona y aforo operativo verificado. El inicio de ingreso es a las 10 p. m. y los accesos internos ya están configurados. Pago por transferencia coordinado por chat; emisión individual tras verificación manual. Producción está conectada a Firestore y Authentication; localhost mantiene una demo aislada.
 
 La preventa no tiene cierre automático al comenzar el evento: falta confirmar su hora de cierre. El precio en puerta se informa por separado.
+
+El contador muestra solo entradas aprobadas en Firebase. Las ventas cobradas fuera del sistema deben registrarse y aprobarse para aparecer; no añadir ventas ficticias ni compensarlas con una cifra inicial sin conciliar.

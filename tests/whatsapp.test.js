@@ -15,6 +15,7 @@ test('direct purchase does not require a name and keeps the chosen pack quantity
   const details = requestDetails({id:'crew'}, 2, new Date('2026-10-05T12:00:00-05:00'));
   const message = purchaseMessage(details);
   assert.match(message,/12 entradas/); assert.match(message,/2 six pack/);
-  assert.match(message,/disponibilidad, precio/);
+  assert.match(message,/total S\/ 240/);
+  assert.match(message,/disponibilidad y los datos/);
   assert.doesNotMatch(message,/Soy undefined/);
 });

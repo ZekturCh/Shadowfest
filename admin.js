@@ -1,9 +1,9 @@
-import {withBusy,isBusy} from './busy.js?v=20261011c';
-import { event } from './config.js?v=20261011c';
-import { request, ticketUrl } from './platform.js?v=20261011c';
-import { setupAccess } from './access.js?v=20261011c';
-import { newSellerAccessCode, normalizeAccessCode } from './staff-code.js?v=20261011c';
-import {setupConsumptionAdmin} from './admin-consumptions.js?v=20261011c';
+import {withBusy,isBusy} from './busy.js?v=20261011-sale3';
+import { event } from './config.js?v=20261011-sale3';
+import { request, ticketUrl } from './platform.js?v=20261011-sale3';
+import { setupAccess } from './access.js?v=20261011-sale3';
+import { newSellerAccessCode, normalizeAccessCode } from './staff-code.js?v=20261011-sale3';
+import {setupConsumptionAdmin} from './admin-consumptions.js?v=20261011-sale3';
 let actor,tickets=[],issueRequest='';
 const status=document.querySelector('#admin-status');
 const labels={pending:'Pendiente',valid:'Aprobada',used:'Utilizada',cancelled:'Invalidada'};

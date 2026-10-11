@@ -1,4 +1,4 @@
-export const initialSold = 110;
+export const initialSold = 0;
 // Proposed milestones, editable by the organizer before publishing.
 export const surprises = [
   { goal: 150, title: 'Primera sorpresa', description: 'Contenido por revelar' },

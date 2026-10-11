@@ -42,7 +42,7 @@ El bloqueo de las demás colecciones se conserva del despliegue anterior. Para i
 4. El admin comprueba el pago por interno y aprueba o invalida.
 5. En puerta solo se admite un QR aprobado, una vez. Un QR pendiente, invalidado o utilizado se rechaza.
 
-El contador comienza en 110 ventas históricas. Generar, enviar, solicitar aprobación y poner nombre no suman. Aprobar suma uno; invalidar una entrada aprobada resta uno; entrar no resta. Los 110 compradores históricos no tienen registros inventados. Las metas de sorpresa 150/200/300 siguen siendo propuestas.
+El contador público y el panel muestran únicamente entradas aprobadas; no suman una base histórica. Generar, enviar, solicitar aprobación y poner nombre no suman. Aprobar suma uno; invalidar una entrada aprobada resta uno; entrar no resta. El campo legado `initialSold: 110` se conserva en las escrituras por compatibilidad con las reglas desplegadas, pero no se usa para calcular ni mostrar ventas. Las metas de sorpresa 150/200/300 siguen siendo propuestas.
 
 ## Publicar
 
