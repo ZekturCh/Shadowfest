@@ -1,8 +1,8 @@
-import { event } from './config.js?v=20261011-invites';
-import { saleStage, packagePrice, requestDetails, earlyBirdEnds } from './sales.js?v=20261011-invites';
-import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261011-invites';
-import { request, localDemo } from './platform.js?v=20261011-invites';
-import { surprises } from './surprises.js?v=20261011-invites';
+import { event } from './config.js?v=20261011-bulk';
+import { saleStage, packagePrice, requestDetails, earlyBirdEnds } from './sales.js?v=20261011-bulk';
+import { whatsappUrl, purchaseMessage } from './whatsapp.js?v=20261011-bulk';
+import { request, localDemo } from './platform.js?v=20261011-bulk';
+import { surprises } from './surprises.js?v=20261011-bulk';
 const unlockCards = document.querySelector('#unlock-cards');
 function renderUnlocks(sold) {
   document.querySelector('#sold-count').textContent=sold;

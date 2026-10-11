@@ -1,15 +1,17 @@
-import {isInvitation,ticketPackageName} from './invitation-policy.js?v=20261011-invites';
-import {withBusy,isBusy} from './busy.js?v=20261011-invites';
-import { event } from './config.js?v=20261011-invites';
-import { request, ticketUrl } from './platform.js?v=20261011-invites';
-import { setupAccess } from './access.js?v=20261011-invites';
-import { newSellerAccessCode, normalizeAccessCode } from './staff-code.js?v=20261011-invites';
-import {setupConsumptionAdmin} from './admin-consumptions.js?v=20261011-invites';
+import {setupBulkTickets} from './admin-bulk.js?v=20261011-bulk';
+import {isInvitation,ticketPackageName} from './invitation-policy.js?v=20261011-bulk';
+import {withBusy,isBusy} from './busy.js?v=20261011-bulk';
+import { event } from './config.js?v=20261011-bulk';
+import { request, ticketUrl } from './platform.js?v=20261011-bulk';
+import { setupAccess } from './access.js?v=20261011-bulk';
+import { newSellerAccessCode, normalizeAccessCode } from './staff-code.js?v=20261011-bulk';
+import {setupConsumptionAdmin} from './admin-consumptions.js?v=20261011-bulk';
 let actor,tickets=[],issueRequest='';
 const status=document.querySelector('#admin-status');
 const labels={pending:'Pendiente',valid:'Aprobada',used:'Utilizada',cancelled:'Invalidada'};
 const initialSellers=['Angélica','Jesús','Diego','Lucía','Sebastián','César'];
 const roleNames={seller:'Vendedor',validator:'Validador'};
+const bulk=setupBulkTickets({getActor:()=>actor,getTickets:()=>tickets,refresh:()=>refresh()});
 const random=()=>[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');
 async function ticketAction(button,id,action){return withBusy(button,'Procesando…',async()=>{const peers=[...document.querySelectorAll(`[data-ticket-id="${id}"]`)];peers.forEach(b=>b.disabled=true);try{await request(action,{id});status.textContent=action==='requestApproval'?'Solicitud enviada. Pago pendiente de revisión.':action==='markSent'?'Enlace marcado como enviado.':'Cambio guardado.';await refresh();}catch(e){status.textContent=e.message;}finally{peers.forEach(b=>b.disabled=false);}},'ticket:'+id);}
 const packageName=id=>ticketPackageName(event.packages,id);
@@ -23,18 +25,20 @@ function render(){
   const own=tickets.filter(t=>t.sellerId===actor.id);document.querySelector('#own-sales').textContent=`Tus QR: ${own.length} generados · ${own.filter(t=>!isInvitation(t)&&['valid','used'].includes(t.status)).length} ventas aprobadas · ${own.filter(t=>isInvitation(t)&&['valid','used'].includes(t.status)).length} cortesías activadas`;
   const search=document.querySelector('#ticket-search').value.trim().toLowerCase(),filter=document.querySelector('#ticket-filter').value;
   const rows=document.querySelector('#ticket-rows');rows.replaceChildren();
-  const makeRow=t=>{
+  const makeRow=(t,context="")=>{
     const row=document.createElement('tr'),actions=cell('');
     const code=document.createElement('strong');code.className='entry-short-code';code.textContent=t.shortCode||'QR anterior';actions.append(code,link('Ver QR',ticketUrl(t.token,t.packageId)));
     const copyButton=document.createElement('button');copyButton.className='secondary';copyButton.textContent='Copiar enlace';copyButton.onclick=()=>withBusy(copyButton,'Copiando…',()=>copy(`Tu entrada de Shadow Fest\nCódigo de puerta: ${t.shortCode||'Ver QR'}\n${ticketUrl(t.token,t.packageId)}\nEl ingreso requiere aprobación de la organización.`));actions.append(copyButton);
     if(t.status==='pending'&&t.sellerId===actor.id&&!isInvitation(t)){for(const [action,text,done] of [['markSent','Marcar enviado',t.sentAt],['requestApproval','Solicitar aprobación',t.approvalRequestedAt]]){if(done)continue;const button=document.createElement('button');button.className='secondary';button.textContent=text;button.dataset.ticketId=t.id;button.onclick=()=>ticketAction(button,t.id,action);actions.append(button);}}
     if(actor.role==='supreme'&&t.status==='pending'){const approve=document.createElement('button');approve.className='secondary';approve.textContent=isInvitation(t)?'Activar cortesía':'Aprobar venta';approve.dataset.ticketId=t.id;approve.onclick=()=>ticketAction(approve,t.id,'approve');actions.append(approve);}
     if(actor.role==='supreme'&&['pending','valid'].includes(t.status)){const cancel=document.createElement('button');cancel.className='secondary';cancel.textContent='Invalidar';cancel.dataset.ticketId=t.id;cancel.onclick=()=>{if(confirm('¿Invalidar esta entrada? Si estaba aprobada, se descontará del contador.'))return ticketAction(cancel,t.id,'cancel');};actions.append(cancel);}
-    row.append(cell(t.buyer?.name?`${t.buyer.name} · ${t.buyer.registeredAt?'Registrado por cliente':'Ingresado al generar'}`:'Cliente sin nombre'),cell(t.buyer?.phone||'—'),cell(t.sellerName),cell(packageName(t.packageId)),cell(`${labels[t.status]} · ${t.sentAt?'Enviado':'Sin marcar envío'}${t.approvalRequestedAt?' · Pago por revisar':''}`),actions);return row;
+    row.append(bulk.selectionCell(t,context),cell(t.buyer?.name?`${t.buyer.name} · ${t.buyer.registeredAt?'Registrado por cliente':'Ingresado al generar'}`:'Cliente sin nombre'),cell(t.buyer?.phone||'—'),cell(t.sellerName),cell(packageName(t.packageId)),cell(`${labels[t.status]} · ${t.sentAt?'Enviado':'Sin marcar envío'}${t.approvalRequestedAt?' · Pago por revisar':''}`),actions);return row;
   };
-  tickets.filter(t=>(filter==='all'||(filter==='requested'?t.status==='pending'&&t.approvalRequestedAt:t.status===filter))&&(!search||`${t.buyer?.name||''} ${t.buyer?.phone||''} ${t.sellerName} ${t.shortCode||''} ${t.id}`.toLowerCase().includes(search))).slice().reverse().forEach(t=>rows.append(makeRow(t)));
-  const queue=document.querySelector('#approval-rows');queue.replaceChildren();const waiting=tickets.filter(t=>t.status==='pending'&&t.approvalRequestedAt);document.querySelector('#approval-count').textContent=waiting.length;if(actor.role==='supreme'){waiting.forEach(t=>queue.append(makeRow(t)));if(!waiting.length){const tr=document.createElement('tr'),td=cell('No hay pagos solicitados por revisar.');td.colSpan=6;tr.append(td);queue.append(tr);}}
-  if(!rows.children.length){const row=document.createElement('tr'),td=cell('Aún no hay entradas que coincidan.');td.colSpan=6;row.append(td);rows.append(row);}
+  const filtered=tickets.filter(t=>(filter==='all'||(filter==='requested'?t.status==='pending'&&t.approvalRequestedAt:t.status===filter))&&(!search||`${t.buyer?.name||''} ${t.buyer?.phone||''} ${t.sellerName} ${t.shortCode||''} ${t.id}`.toLowerCase().includes(search))).slice().reverse();
+  filtered.forEach(t=>rows.append(makeRow(t)));bulk.setVisible(filtered);
+  const queue=document.querySelector('#approval-rows');queue.replaceChildren();const waiting=tickets.filter(t=>t.status==='pending'&&t.approvalRequestedAt);document.querySelector('#approval-count').textContent=waiting.length;if(actor.role==='supreme'){waiting.forEach(t=>queue.append(makeRow(t," para revisión")));if(!waiting.length){const tr=document.createElement('tr'),td=cell('No hay pagos solicitados por revisar.');td.colSpan=7;tr.append(td);queue.append(tr);}}
+  if(!rows.children.length){const row=document.createElement('tr'),td=cell('Aún no hay entradas que coincidan.');td.colSpan=7;row.append(td);rows.append(row);}
+  bulk.sync();
 }
 async function refresh(){tickets=await request('list');render();if(actor.role==='supreme'){const stats=await request('stats');document.querySelector('#sold-admin').textContent=stats.sold;await renderAccesses();}}
 async function renderAccesses(){const rows=document.querySelector('#access-list');rows.replaceChildren();(await request('accessList')).forEach(a=>{const row=document.createElement('div');row.className='access-row';const text=document.createElement('span');text.textContent=`${a.name} · ${roleNames[a.role]} · ${a.active?'Activo':'Revocado'}`;row.append(text);if(a.role==='seller'){const own=tickets.filter(t=>t.sellerId===a.id);const summary=document.createElement('small');summary.className='seller-summary';summary.textContent=`${own.length} generados · ${own.filter(t=>t.status==='pending').length} pendientes · ${own.filter(t=>!isInvitation(t)&&['valid','used'].includes(t.status)).length} ventas aprobadas · ${own.filter(t=>isInvitation(t)&&['valid','used'].includes(t.status)).length} cortesías activadas · ${own.filter(t=>t.status==='cancelled').length} invalidados`;text.append(document.createElement('br'),summary);}if(a.active){const button=document.createElement('button');button.className='secondary';button.textContent='Revocar';button.onclick=()=>withBusy(button,'Revocando…',async()=>{try{await request('accessRevoke',{id:a.id});await renderAccesses();}catch(e){status.textContent=e.message;}});row.append(button);}rows.append(row);});}
@@ -49,7 +53,7 @@ document.querySelector('#create-access').addEventListener('submit',e=>{e.prevent
 document.querySelector('#generate-access-code').onclick=()=>{const form=document.querySelector('#create-access');try{document.querySelector('#seller-code').value=form.elements.role.value==='seller'?newSellerAccessCode(form.elements.name.value):random();document.querySelector('#create-access-status').textContent='';}catch(error){document.querySelector('#create-access-status').textContent=error.message;}};
 function updateAccessCodeHelp(){const seller=document.querySelector('#create-access').elements.role.value==='seller';document.querySelector('#seller-code').minLength=seller?6:8;document.querySelector('#access-code-help').textContent=seller?'Vendedores: inicial del nombre + 26 + tres letras. Ejemplo de formato: A26KRM. También se admiten códigos de 8 a 64 caracteres.':'Para personal de puerta usa un código de 8 a 64 caracteres sin espacios.';}
 document.querySelector('#create-access').elements.role.addEventListener('change',()=>{document.querySelector('#seller-code').value='';updateAccessCodeHelp();});updateAccessCodeHelp();
-document.querySelector('#ticket-search').oninput=render;document.querySelector('#ticket-filter').onchange=render;
+document.querySelector('#ticket-search').oninput=()=>{bulk.clear();render();};document.querySelector('#ticket-filter').onchange=()=>{bulk.clear();render();};
 document.querySelector('#refresh-tickets').onclick=e=>withBusy(e.currentTarget,'Actualizando…',()=>refresh().catch(err=>status.textContent=err.message));
 window.addEventListener('storage',()=>{if(actor&&!isBusy())refresh().catch(e=>status.textContent=e.message);});
 setInterval(()=>{if(actor&&!document.hidden&&!isBusy())refresh().catch(e=>status.textContent=e.message);},30000);

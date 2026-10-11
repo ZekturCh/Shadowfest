@@ -1,7 +1,7 @@
-import { request, ticketUrl } from './platform.js?v=20261011-invites';
-import { setupAccess } from './access.js?v=20261011-invites';
-import { withBusy, isBusy } from './busy.js?v=20261011-invites';
-import { invitationPackageId } from './invitation-policy.js?v=20261011-invites';
+import { request, ticketUrl } from './platform.js?v=20261011-bulk';
+import { setupAccess } from './access.js?v=20261011-bulk';
+import { withBusy, isBusy } from './busy.js?v=20261011-bulk';
+import { invitationPackageId } from './invitation-policy.js?v=20261011-bulk';
 const form=document.querySelector('#invitation-form'),feedback=document.querySelector('#invitation-status');
 const labels={pending:'Por activar',valid:'Cortesía activada',used:'Utilizada',cancelled:'Anulada'};
 let actor,tickets=[],quota={limit:110,allocated:0},issueRequest='';

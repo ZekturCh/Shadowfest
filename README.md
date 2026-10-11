@@ -39,7 +39,7 @@ Datos y arte: [EVENTO.md](EVENTO.md), [ARTE.md](ARTE.md). General S/20 hasta el 
 
 ## Operación en puerta y lotes
 
-Se pueden generar 1, 5 o 10 entradas individuales. El pack mantiene sus seis entradas y beneficio independiente. La emisión por lotes guarda partes pequeñas con una solicitud estable para reintentar sin duplicar lo ya guardado; una interrupción puede dejar parte del lote pendiente, y se completa con el mismo intento. Los botones bloquean acciones repetidas mientras se guardan.
+Se pueden generar 1, 5, 10, 25 o 50 entradas individuales. El pack mantiene sus seis entradas y beneficio independiente. La emisión por lotes guarda partes pequeñas con una solicitud estable para reintentar sin duplicar lo ya guardado; una interrupción puede dejar parte del lote pendiente, y se completa con el mismo intento. Los botones bloquean acciones repetidas mientras se guardan.
 
 Cada entrada tiene un código de puerta de seis caracteres aleatorios, mezclando letras y números y evitando I/O/0/1. El índice de códigos solo permite consulta a personal autorizado; el cliente conserva un enlace privado de 256 bits para abrir su QR. El QR nuevo codifica esos seis caracteres. Se aceptan enlaces antiguos y enlaces de ambos hosts. Las entradas existentes recibieron un código corto sin cambiar su vendedor, estado o contador.
 
@@ -49,4 +49,12 @@ Los nuevos códigos sugeridos para vendedores usan la inicial sin tilde, `26` y 
 
 ## Página de venta
 
-El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados de pago o de cortesía (incluye usados, excluye anulados); no añade una base histórica. La reserva de hasta 110 invitaciones y canjes se comunica por separado.
+El precio de cada pase y el total de la cantidad elegida se incluyen en el mensaje de WhatsApp. El pack tiene precio propio e incluye seis entradas generales y un sixpack de Pilsen. La tarifa en puerta se muestra separada del precio online. La carta prevista propone Pilsen S/9, sixpack S/50, cócteles S/18 y salchipapa S/13; la organización debe confirmar disponibilidad y precio antes de cada precompra. El contador público usa solo QR aprobados de pago o de cortesía (incluye usados, excluye anulados); no añade una base histórica. Los hasta 110 cupos de cortesía se gestionan en el panel privado; el bloque de reserva se retiró de la página pública.
+
+## Aprobar y compartir hasta 50 QR
+
+En Administración, «Ver entradas y aprobar lotes» lleva a la tabla y sus acciones colectivas. «Lote de…» selecciona todos los QR de una generación (también los seis del pack); se pueden elegir QR de diferentes lotes hasta un máximo de 50. El filtro permite limitar la lista por comprador o vendedor. Cambiar el filtro borra la selección y exige comprobar nuevamente el pago.
+
+El supremo marca que verificó en la cuenta principal el pago de las entradas pendientes seleccionadas, y pulsa Aprobar. Cada entrada se aprueba con una transacción que actualiza su estado y contador juntos. Se muestra el progreso; si una falla, se informa su código y se pueden reintentar las pendientes. Los QR ya aprobados no vuelven a contabilizarse. Esta función mantiene la comprobación manual del pago.
+
+«Copiar enlaces seleccionados» prepara un mensaje con todos los enlaces individuales; el usuario lo pega en WhatsApp. También puede descargar los enlaces en CSV. Tras enviarlos, «Marcar seleccionadas como enviadas» registra el envío. El admin puede registrar envíos de otros vendedores sin cambiar el propietario del QR; los vendedores solo gestionan los propios y pueden solicitar revisión de pago por lote. Las cortesías se activan desde su panel separado.

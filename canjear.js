@@ -1,8 +1,8 @@
-import {request} from './platform.js?v=20261011-invites';
-import {setupAccess} from './access.js?v=20261011-invites';
-import {withBusy} from './busy.js?v=20261011-invites';
-import {extractConsumptionCode,consumptionAmount} from './consumption.js?v=20261011-invites';
-import QrScanner from './vendor/qr-scanner.min.js?v=20261011-invites';
+import {request} from './platform.js?v=20261011-bulk';
+import {setupAccess} from './access.js?v=20261011-bulk';
+import {withBusy} from './busy.js?v=20261011-bulk';
+import {extractConsumptionCode,consumptionAmount} from './consumption.js?v=20261011-bulk';
+import QrScanner from './vendor/qr-scanner.min.js?v=20261011-bulk';
 setupAccess(['supreme','validator'],async()=>{});
 let currentCode='',scanner=null,scanGeneration=0,lookupGeneration=0,redeeming=false;
 const video=document.querySelector('#scanner-video'),scanStatus=document.querySelector('#scan-status'),feedback=document.querySelector('#validation-status'),confirmButton=document.querySelector('#confirm-canje'),lookupButton=document.querySelector('#lookup-form button'),startButton=document.querySelector('#start-camera'),input=document.querySelector('#code-input');

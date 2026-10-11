@@ -1,5 +1,7 @@
 import {newShortCode} from '../ticket-code.js';
 import {publicConsumption} from '../consumption.js';
+import {approveTicket} from '../src/ticket-approval.js';
+import {runTicketBatch} from '../bulk-tickets.js';
 import { before, beforeEach, after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -13,16 +15,56 @@ before(async()=>{env=await initializeTestEnvironment({projectId:'demo-shadowfest
 beforeEach(async()=>{await env.clearFirestore();await env.withSecurityRulesDisabled(async c=>{for(const [id,role] of [['admin','supreme'],['seller','seller'],['other','seller'],['door','validator']])await setDoc(r(c.firestore(),'staff',id),{name:id,role,active:true,createdAt:serverTimestamp()});});});
 after(async()=>{await env?.cleanup();});
 async function issue(uid='seller',count=1){const client=db(uid),ids=Array.from({length:count},()=>randomBytes(32).toString('hex')),base=uid+'_'+randomBytes(16).toString('hex'),packageId=count===6?'crew':'general';for(let offset=0;offset<count;offset+=3){const requestId=base+'_'+Math.floor(offset/3),part=ids.slice(offset,offset+3),batch=writeBatch(client);batch.set(r(client,'requests',requestId),{sellerId:uid,packageId,ids:part,quantity:count,createdAt:serverTimestamp()});for(const token of part){const shortCode=newShortCode();await getDoc(r(client,'codes',shortCode));batch.set(r(client,'tickets',token),{token,shortCode,sellerId:uid,sellerName:uid,packageId,status:'pending',buyer:null,createdAt:serverTimestamp(),usedAt:null,requestId});batch.set(r(client,'passes',token),{token,shortCode,name:'Sin nombre',packageId,status:'pending',registered:false});batch.set(r(client,'codes',shortCode),{token,sellerId:uid});}await batch.commit();}return ids;}
-async function approve(id){const client=db('admin');await runTransaction(client,async tx=>{const sales=r(client,'meta','sales'),snap=await tx.get(sales),approved=(snap.exists()?snap.data().approved:0)+1;tx.update(r(client,'tickets',id),{status:'valid',approvedAt:serverTimestamp(),approvedBy:'admin'});tx.update(r(client,'passes',id),{status:'valid'});tx.set(sales,{approved,initialSold:110,lastTicket:id,updatedAt:serverTimestamp()});tx.set(r(client,'publicStats','sales'),{approved,initialSold:110,updatedAt:serverTimestamp()});});}
+async function approve(id){const client=db('admin');await approveTicket(client,(name,token)=>r(client,name,token),id,'admin');}
 test('one and six ticket issuance succeeds, owner query is isolated, anonymous cannot enumerate',async()=>{const ids=await issue('seller',6);assert.equal(ids.length,6);const client=db('seller');assert.equal((await getDocs(query(collection(client,'shadowfest_live/2026/tickets'),where('sellerId','==','seller')))).size,6);await assertFails(getDocs(collection(client,'shadowfest_live/2026/tickets')));await assertFails(getDoc(r(db('other'),'tickets',ids[0])));await assertSucceeds(getDoc(r(db(),'passes',ids[0])));await assertFails(getDoc(r(db(),'tickets',ids[0])));await assertFails(getDocs(collection(db(),'shadowfest_live/2026/passes')));await assertFails(getDoc(r(db(),'meta','sales')));});
 test('seller cannot forge approvals, reassign tickets or access another seller',async()=>{const [id]=await issue();await assertFails(updateDoc(r(db('seller'),'tickets',id),{status:'valid'}));await assertFails(updateDoc(r(db('seller'),'tickets',id),{sellerId:'other'}));await assertFails(updateDoc(r(db('other'),'tickets',id),{sentAt:serverTimestamp()}));await assertFails(setDoc(r(db('seller'),'staff','hacker'),{name:'hacker',role:'supreme',active:true,createdAt:serverTimestamp()}));await assertFails(setDoc(r(db('new-unprovisioned'),'staff','new-unprovisioned'),{name:'hacker',role:'seller',active:true,createdAt:serverTimestamp()}));});
-test('delivery and request preserve pending, approval atomically counts exactly once',async()=>{const [id]=await issue();const client=db('seller');await updateDoc(r(client,'tickets',id),{sentAt:serverTimestamp()});await updateDoc(r(client,'tickets',id),{approvalRequestedAt:serverTimestamp(),approvalRequestedBy:'seller'});assert.equal((await getDoc(r(client,'tickets',id))).data().status,'pending');await assertFails(updateDoc(r(db('admin'),'tickets',id),{status:'valid',approvedAt:serverTimestamp(),approvedBy:'admin'}));await approve(id);assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);await assertFails(approve(id));await assertFails(setDoc(r(db('seller'),'publicStats','sales'),{approved:999,initialSold:110,updatedAt:serverTimestamp()}));await assertFails(updateDoc(r(db('admin'),'publicStats','sales'),{approved:999,updatedAt:serverTimestamp()}));});
+test('delivery and request preserve pending, approval atomically counts exactly once',async()=>{const [id]=await issue();const client=db('seller');await updateDoc(r(client,'tickets',id),{sentAt:serverTimestamp()});await updateDoc(r(client,'tickets',id),{approvalRequestedAt:serverTimestamp(),approvalRequestedBy:'seller'});assert.equal((await getDoc(r(client,'tickets',id))).data().status,'pending');await assertFails(updateDoc(r(db('admin'),'tickets',id),{status:'valid',approvedAt:serverTimestamp(),approvedBy:'admin'}));await approve(id);assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);await assert.rejects(approve(id),/pendientes/);await assertFails(setDoc(r(db('seller'),'publicStats','sales'),{approved:999,initialSold:110,updatedAt:serverTimestamp()}));await assertFails(updateDoc(r(db('admin'),'publicStats','sales'),{approved:999,updatedAt:serverTimestamp()}));});
 test('optional name is single use, bound to QR, cannot overwrite or approve',async()=>{const [id]=await issue();const client=db();const name=()=>{const batch=writeBatch(client);batch.update(r(client,'tickets',id),{buyer:{name:'Cliente',source:'buyer',registeredAt:serverTimestamp(),consentVersion:'2026-10-name-v1'}});batch.update(r(client,'passes',id),{name:'Cliente',registered:true});return batch.commit();};await assertSucceeds(name());await assertFails(name());const ticket=(await getDoc(r(db('admin'),'tickets',id))).data();assert.equal(ticket.status,'pending');assert.equal(ticket.sellerId,'seller');assert.equal(ticket.buyer.source,'buyer');});
 test('door admits approved ticket only once and cannot list buyers',async()=>{const [id]=await issue();const client=db('door');const admit=()=>runTransaction(client,async tx=>{const t=await tx.get(r(client,'tickets',id));if(t.data().status!=='valid')throw new Error('not valid');tx.update(r(client,'tickets',id),{status:'used',usedAt:serverTimestamp(),validatedBy:'door'});tx.update(r(client,'passes',id),{status:'used'});});await assert.rejects(admit());await approve(id);const results=await Promise.allSettled([admit(),admit()]);assert.equal(results.filter(x=>x.status==='fulfilled').length,1);assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);await assertFails(getDocs(collection(client,'shadowfest_live/2026/tickets')));});
 test('revoked seller loses reads and writes and supreme role is immutable',async()=>{const [id]=await issue();await updateDoc(r(db('admin'),'staff','seller'),{active:false,revokedAt:serverTimestamp()});await assertFails(getDoc(r(db('seller'),'tickets',id)));await assertFails(issue());await assertFails(updateDoc(r(db('admin'),'staff','admin'),{active:false,revokedAt:serverTimestamp()}));});
 test('cancelling approved ticket reverses count; pending cancellation does not',async()=>{const [id,pending]=await issue('seller',6);await approve(id);const client=db('admin'),batch=writeBatch(client);batch.update(r(client,'tickets',id),{status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:'admin'});batch.update(r(client,'passes',id),{status:'cancelled'});batch.set(r(client,'meta','sales'),{approved:0,initialSold:110,lastTicket:id,updatedAt:serverTimestamp()});batch.set(r(client,'publicStats','sales'),{approved:0,initialSold:110,updatedAt:serverTimestamp()});await assertSucceeds(batch.commit());const next=writeBatch(client);next.update(r(client,'tickets',pending),{status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:'admin'});next.update(r(client,'passes',pending),{status:'cancelled'});await assertSucceeds(next.commit());assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,0);});
 
 test('batch of ten stays pending and short codes resolve only for staff or their seller',async()=>{const ids=await issue('seller',10);assert.equal(ids.length,10);const first=(await getDoc(r(db('seller'),'tickets',ids[0]))).data();assert.match(first.shortCode,/^[A-HJ-NP-Z2-9]{6}$/);await assertSucceeds(getDoc(r(db('door'),'codes',first.shortCode)));await assertFails(getDoc(r(db(),'codes',first.shortCode)));await assertFails(getDoc(r(db('other'),'codes',first.shortCode)));await assertFails(getDocs(collection(db('door'),'shadowfest_live/2026/codes')));await assertFails(updateDoc(r(db('seller'),'codes',first.shortCode),{token:ids[1]}));await assertFails(updateDoc(r(db('seller'),'tickets',ids[0]),{shortCode:'K7M9Q2'}));assert.equal((await getDocs(query(collection(db('seller'),'shadowfest_live/2026/tickets'),where('sellerId','==','seller')))).size,10);});
+
+test('rules reject a forged second approval even when the client bypasses its retry checks',async()=>{
+  const [id]=await issue();await approve(id);const client=db('admin'),batch=writeBatch(client);
+  batch.update(r(client,'tickets',id),{status:'valid',approvedAt:serverTimestamp(),approvedBy:'admin'});
+  batch.update(r(client,'passes',id),{status:'valid'});
+  batch.set(r(client,'meta','sales'),{approved:2,initialSold:110,lastTicket:id,updatedAt:serverTimestamp()});
+  batch.set(r(client,'publicStats','sales'),{approved:2,initialSold:110,updatedAt:serverTimestamp()});
+  await assertFails(batch.commit());assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);
+});
+test('fifty tickets issue in one group, approve individually and retry without inflating the counter',async()=>{
+  const ids=await issue('seller',50),client=db('admin'),ref=(name,token)=>r(client,name,token);
+  assert.equal(ids.length,50);
+  const progress=[],result=await runTicketBatch(ids,id=>approveTicket(client,ref,id,'admin',{retry:true,paidOnly:true}),(done,total)=>progress.push([done,total]));
+  assert.equal(result.changed.length,50);assert.deepEqual(result.failed,[]);
+  assert.deepEqual(progress.at(-1),[50,50]);
+  const repeated=await runTicketBatch(ids,id=>approveTicket(client,ref,id,'admin',{retry:true,paidOnly:true}));
+  assert.equal(repeated.changed.length,0);assert.equal(repeated.unchanged.length,50);
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,50);
+  for(const id of ids){const ticket=(await getDoc(ref('tickets',id))).data();assert.equal(ticket.sellerId,'seller');assert.equal(ticket.status,'valid');}
+});
+test('bulk approval rejects sellers and courtesy passes; a cancelled item does not stop other approvals',async()=>{
+  const ids=await issue('seller',5),client=db('admin'),ref=(name,token)=>r(client,name,token),sellerClient=db('seller');
+  await assertFails(approveTicket(sellerClient,(name,id)=>r(sellerClient,name,id),ids[0],'seller',{retry:true,paidOnly:true}));
+  const cancel=writeBatch(client);cancel.update(ref('tickets',ids[1]),{status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:'admin'});cancel.update(ref('passes',ids[1]),{status:'cancelled'});await cancel.commit();
+  const [invitation]=await issueInvitations();
+  const result=await runTicketBatch([...ids,invitation],id=>approveTicket(client,ref,id,'admin',{retry:true,paidOnly:true}));
+  assert.equal(result.changed.length,4);assert.equal(result.failed.length,2);
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,4);
+  assert.equal((await getDoc(ref('tickets',invitation))).data().status,'pending');
+});
+test('admin can record delivery of another seller approved QR; sellers remain isolated',async()=>{
+  const [id]=await issue();await approve(id);
+  await assertFails(updateDoc(r(db('other'),'tickets',id),{sentAt:serverTimestamp()}));
+  await assertSucceeds(updateDoc(r(db('admin'),'tickets',id),{sentAt:serverTimestamp()}));
+  assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);
+  assert.equal((await getDoc(r(db('admin'),'tickets',id))).data().sellerId,'seller');
+  const [owned]=await issue('other');await approve(owned);
+  await assertSucceeds(updateDoc(r(db('other'),'tickets',owned),{sentAt:serverTimestamp()}));
+  await assertFails(updateDoc(r(db('other'),'tickets',owned),{approvalRequestedAt:serverTimestamp(),approvalRequestedBy:'other'}));
+});
 
 async function issueInvitations(count=1,uid='admin',base=uid+'_'+randomBytes(16).toString('hex')) {
   const client=db(uid),ids=[];
@@ -87,7 +129,7 @@ test('courtesy activation counts once, accepts optional name and delivery withou
   await assertFails(updateDoc(r(db('admin'),'tickets',id),{approvalRequestedAt:serverTimestamp(),approvalRequestedBy:'admin'}));
   await approve(id);
   await assertSucceeds(updateDoc(r(db('admin'),'tickets',id),{sentAt:serverTimestamp()}));
-  await assertFails(approve(id));
+  await assert.rejects(approve(id),/pendientes/);
   assert.equal((await getDoc(r(db(),'publicStats','sales'))).data().approved,1);
   assert.equal((await getDoc(r(db(),'passes',id))).data().name,'Invitada');
 });

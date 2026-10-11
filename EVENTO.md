@@ -34,4 +34,4 @@ WhatsApp configurado: +51 955 121 011. Pendientes: hora de cierre, cupos por zon
 
 La preventa no tiene cierre automático al comenzar el evento: falta confirmar su hora de cierre. El precio en puerta se informa por separado.
 
-El contador muestra entradas aprobadas en Firebase (de pago y de cortesía, incluidos los QR utilizados). Las ventas cobradas fuera del sistema deben registrarse y aprobarse para aparecer. La organización prevé hasta 110 cupos para invitaciones y canjes; se muestran como reserva prevista y se emiten individualmente desde `invitaciones.html`, sin sumarlos al contador antes de activar cada QR. Las cortesías dan acceso General, sin cobro de entrada.
+El contador muestra entradas aprobadas en Firebase (de pago y de cortesía, incluidos los QR utilizados). Las ventas cobradas fuera del sistema deben registrarse y aprobarse para aparecer. La organización prevé hasta 110 cupos para invitaciones y canjes; se administran únicamente en el panel privado `invitaciones.html` y no se suman al contador antes de activar cada QR. Las cortesías dan acceso General, sin cobro de entrada.

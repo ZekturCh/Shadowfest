@@ -68,13 +68,14 @@ service cloud.firestore {
         && request.resource.data.active == false && request.resource.data.revokedAt == request.time;
     }
     match /shadowfest_live/2026/requests/{id} {
-      allow get: if seller() && (supreme() || id.matches(request.auth.uid + '_[a-f0-9]{32}(_[0-3])?'));
+      allow get: if seller() && (supreme() || id.matches(request.auth.uid + '_[a-f0-9]{32}(_([0-9]|1[0-6]))?'));
       allow create: if seller() && request.resource.data.keys().hasOnly(['sellerId','packageId','ids','quantity','createdAt'])
-        && id.matches(request.auth.uid + '_[a-f0-9]{32}_[0-3]') && request.resource.data.sellerId == request.auth.uid
+        && id.matches(request.auth.uid + '_[a-f0-9]{32}_([0-9]|1[0-6])') && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.packageId in ['general','crew','vip','invitation']
         && request.resource.data.ids is list
         && request.resource.data.ids.size() >= 1 && request.resource.data.ids.size() <= 3
-        && (request.resource.data.packageId == 'crew' ? request.resource.data.quantity == 6 : request.resource.data.quantity in [1,5,10])
+        && (request.resource.data.packageId == 'crew' ? request.resource.data.quantity == 6
+          : (request.resource.data.packageId == 'invitation' ? request.resource.data.quantity in [1,5,10] : request.resource.data.quantity in [1,5,10,25,50]))
         && request.resource.data.createdAt == request.time
         && (request.resource.data.packageId != 'invitation' || (supreme() && invitationAllocated(id,request.resource.data.ids.size())));
     }
@@ -100,11 +101,11 @@ service cloud.firestore {
         && id in getAfter(/databases/$(database)/documents/shadowfest_live/2026/requests/$(request.resource.data.requestId)).data.ids
         && passMatches(id,request.resource.data);
       allow update: if buyerName(id);
-      allow update: if seller() && resource.data.sellerId == request.auth.uid
-        && (resource.data.status == 'pending' || (supreme() && resource.data.packageId == 'invitation' && resource.data.status == 'valid'))
+      allow update: if seller() && (resource.data.sellerId == request.auth.uid || supreme())
+        && resource.data.status in ['pending','valid']
         && ((request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sentAt'])
              && !('sentAt' in resource.data) && request.resource.data.sentAt == request.time)
-          || (resource.data.status == 'pending' && resource.data.packageId != 'invitation'
+          || (resource.data.status == 'pending' && resource.data.packageId != 'invitation' && resource.data.sellerId == request.auth.uid
              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approvalRequestedAt','approvalRequestedBy'])
              && !('approvalRequestedAt' in resource.data) && request.resource.data.approvalRequestedAt == request.time
              && request.resource.data.approvalRequestedBy == request.auth.uid));
