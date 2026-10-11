@@ -1,5 +1,5 @@
-import { request, login, logout, showMode } from './platform.js?v=20261011s';
-import {withBusy} from './busy.js?v=20261011s';
+import { request, login, logout, showMode } from './platform.js?v=20261011c';
+import {withBusy} from './busy.js?v=20261011c';
 export function setupAccess(roles,onReady){
   showMode();const gate=document.querySelector('#access-gate'),content=document.querySelector('#staff-content'),feedback=document.querySelector('#access-status');
   async function enter(actor){if(!roles.includes(actor.role))throw new Error('Tu código no tiene acceso a este panel.');document.querySelector('#actor-name').textContent=actor.name;await onReady(actor);gate.classList.add('hidden');content.classList.remove('hidden');}

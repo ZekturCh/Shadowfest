@@ -1,13 +1,16 @@
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, setPersistence, browserSessionPersistence, inMemoryPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, deleteUser, signOut } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, getDocs, query, where, runTransaction, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, query, where, runTransaction, writeBatch, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { newShortCode, shortCodePattern, ticketQuantity } from '../ticket-code.js';
 import { normalizeAccessCode, validStaffCode } from '../staff-code.js';
+import { checkConsumption, publicConsumption } from '../consumption.js';
 
 export const firebaseConfig={apiKey:'AIzaSyCL4RyZwSHQighzQ61qbaGfK9jCiIfB30U',authDomain:'comecome-ab1a0.firebaseapp.com',projectId:'comecome-ab1a0',storageBucket:'comecome-ab1a0.firebasestorage.app',messagingSenderId:'399645583727',appId:'1:399645583727:web:2e777325eaa14ed559a09a'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
 const ready=setPersistence(auth,typeof window==='undefined'?inMemoryPersistence:browserSessionPersistence);
 const path='shadowfest_live/2026',coll=name=>collection(db,`${path}/${name}`),ref=(name,id)=>doc(coll(name),id);
+const consumptionRef=(ticketId,id)=>doc(db,`${path}/passes/${ticketId}/consumptions/${id}`);
+function consumptionWrites(tx,id,order,create=false){const data=publicConsumption(order);if(create){tx.set(ref('consumptions',id),order);tx.set(ref('consumptionPasses',id),data);tx.set(consumptionRef(order.ticketId,id),data);}else{tx.update(ref('consumptions',id),order);tx.update(ref('consumptionPasses',id),data);tx.update(consumptionRef(order.ticketId,id),data);}}
 const random=n=>[...crypto.getRandomValues(new Uint8Array(n))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const requireValue=(value,message)=>{if(!value)throw new Error(message);};
 export async function codeEmail(code){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code));return [...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('')+'@shadowfest.invalid';}
@@ -22,6 +25,8 @@ async function execute(action,data){
   if(action==='logout'){await signOut(auth);return {};}
   if(action==='stats'){const snap=await getDoc(ref('publicStats','sales'));return {sold:110+(snap.exists()?snap.data().approved:0),initialSold:110};}
   if(action==='ticket')return publicTicket(data.code);
+  if(action==='consumptionsForTicket'){await publicTicket(data.code);return (await getDocs(collection(db,`${path}/passes/${data.code}/consumptions`))).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
+  if(action==='consumptionPass'){requireValue(/^[a-f0-9]{64}$/.test(data.code||''),'Enlace de canje inválido.');const snap=await getDoc(ref('consumptionPasses',data.code));requireValue(snap.exists(),'Pedido no encontrado.');return {id:snap.id,...plain(snap.data())};}
   if(action==='buyerName'){
     const entry=await publicTicket(data.code),name=String(data.name||'').trim();requireValue(name.length>=2&&name.length<=80&&data.consent===true,'Escribe tu nombre y acepta guardarlo.');requireValue(!entry.registered,'Esta entrada ya tiene nombre.');
     const buyer={name,source:'buyer',registeredAt:serverTimestamp(),consentVersion:'2026-10-name-v1'};
@@ -29,6 +34,22 @@ async function execute(action,data){
   }
   const a=await actor();
   if(action==='me')return a;
+  if(action==='consumptionList'){allow(a,['supreme']);return (await getDocs(coll('consumptions'))).docs.map(s=>({id:s.id,...plain(s.data())})).sort((x,y)=>x.createdAt.localeCompare(y.createdAt));}
+  if(action==='consumptionCreate'){
+    allow(a,['supreme']);const description=checkConsumption(data.description,data.amountCents),id=data.requestId;requireValue(/^[a-f0-9]{64}$/.test(id||''),'Solicitud de pedido inválida.');const ticketId=await resolveCode(data.code);
+    await runTransaction(db,async tx=>{const previous=await tx.get(ref('consumptions',id)),ticket=await tx.get(ref('tickets',ticketId));requireValue(ticket.exists()&&['valid','used'].includes(ticket.data().status),'Primero aprueba la entrada asociada al pedido.');if(previous.exists()){const order=previous.data();requireValue(order.createdBy===a.id&&order.ticketId===ticketId&&order.description===description&&order.amountCents===data.amountCents,'Solicitud reutilizada con otro pedido.');return;}const t=ticket.data(),order={token:id,ticketId,ticketCode:t.shortCode||'',buyerName:t.buyer?.name||'Sin nombre',description,amountCents:data.amountCents,status:'pending',shortCode:null,createdAt:serverTimestamp(),createdBy:a.id,redeemedAt:null};consumptionWrites(tx,id,order,true);});return {id};
+  }
+  if(action==='consumptionApprove'){
+    allow(a,['supreme']);for(let attempt=0;attempt<3;attempt++){const shortCode=newShortCode();try{await runTransaction(db,async tx=>{const snap=await tx.get(ref('consumptions',data.id)),reservation=await tx.get(ref('consumptionCodes',shortCode));requireValue(snap.exists()&&snap.data().status==='pending','Solo se aprueban pedidos pendientes.');const order=snap.data(),ticket=await tx.get(ref('tickets',order.ticketId));requireValue(ticket.exists()&&['valid','used'].includes(ticket.data().status),'La entrada asociada no está aprobada.');requireValue(!reservation.exists(),'Colisión de canje. Reintentando.');consumptionWrites(tx,data.id,{...order,status:'valid',shortCode,approvedAt:serverTimestamp(),approvedBy:a.id});tx.set(ref('consumptionCodes',shortCode),{token:data.id});});return {};}catch(error){if(attempt===2||!error.message.includes('Colisión de canje'))throw error;}}
+  }
+  if(action==='consumptionCancel'){
+    allow(a,['supreme']);await runTransaction(db,async tx=>{const snap=await tx.get(ref('consumptions',data.id));requireValue(snap.exists()&&['pending','valid'].includes(snap.data().status),'Este pedido ya no se puede anular.');consumptionWrites(tx,data.id,{...snap.data(),status:'cancelled',cancelledAt:serverTimestamp(),cancelledBy:a.id});});return {};
+  }
+  if(['consumptionLookup','consumptionRedeem'].includes(action)){
+    allow(a,['supreme','validator']);let id=data.code;if(shortCodePattern.test(id||'')){const snap=await getDoc(ref('consumptionCodes',id));requireValue(snap.exists(),'Código de canje no encontrado.');id=snap.data().token;}requireValue(/^[a-f0-9]{64}$/.test(id||''),'Código de canje inválido.');
+    if(action==='consumptionLookup'){const snap=await getDoc(ref('consumptions',id));requireValue(snap.exists(),'Pedido no encontrado.');return {id,...plain(publicConsumption(snap.data()))};}
+    await runTransaction(db,async tx=>{const snap=await tx.get(ref('consumptions',id));requireValue(snap.exists()&&snap.data().status==='valid','Pedido ya entregado, anulado o pendiente de pago.');consumptionWrites(tx,id,{...snap.data(),status:'redeemed',redeemedAt:serverTimestamp(),redeemedBy:a.id});});return {status:'redeemed'};
+  }
   if(action==='accessList'){allow(a,['supreme']);return (await getDocs(coll('staff'))).docs.filter(s=>s.data().role!=='supreme').map(s=>({id:s.id,...plain(s.data())}));}
   if(action==='accessCreate'){
     allow(a,['supreme']);const name=String(data.name||'').trim(),code=normalizeAccessCode(data.code);requireValue(name.length>=2&&name.length<=60&&validStaffCode(name,code,data.role),data.role==='seller'?'Usa la inicial del vendedor + 26 + tres letras, o un código de 8 a 64 caracteres sin espacios.':'Usa un nombre y código de 8 a 64 caracteres sin espacios.');
@@ -64,3 +85,11 @@ async function execute(action,data){
   throw new Error('Operación no disponible.');
 }
 export async function firebaseRequest(action,data={}){try{return await execute(action,data);}catch(error){const messages={'auth/invalid-credential':'Código incorrecto o revocado.','auth/user-not-found':'Código incorrecto o revocado.','auth/wrong-password':'Código incorrecto o revocado.','auth/operation-not-allowed':'Falta activar el acceso interno en Firebase Authentication.','auth/configuration-not-found':'Falta configurar Firebase Authentication.','auth/email-already-in-use':'Este código de acceso ya existe.','auth/too-many-requests':'Demasiados intentos. Espera antes de volver a intentar.','permission-denied':'Firebase rechazó la operación. Revisa que tu acceso esté activo y las reglas estén publicadas.','unavailable':'No hay conexión con Firebase. Intenta nuevamente.'};throw new Error(messages[error.code]||error.message);}}
+export async function watchConsumptionData(kind,code,next,error){
+  const entries=snap=>next(snap.docs.map(s=>({id:s.id,...plain(s.data())})).sort((a,b)=>String(a.createdAt||'').localeCompare(String(b.createdAt||''))));
+  if(kind==='admin'){allow(await actor(),['supreme']);return onSnapshot(coll('consumptions'),entries,error);}
+  requireValue(/^[a-f0-9]{64}$/.test(code||''),'Enlace inválido.');
+  if(kind==='ticket')return onSnapshot(collection(db,`${path}/passes/${code}/consumptions`),entries,error);
+  if(kind==='pass')return onSnapshot(ref('consumptionPasses',code),snap=>snap.exists()?next({id:snap.id,...plain(snap.data())}):error(new Error('Pedido no encontrado.')),error);
+  throw new Error('Vista de pedidos no disponible.');
+}

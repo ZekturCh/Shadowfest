@@ -8,6 +8,14 @@ service cloud.firestore {
     function door() { return active() && staff().role in ['supreme', 'validator']; }
     function passAfter(id) { return getAfter(/databases/$(database)/documents/shadowfest_live/2026/passes/$(id)).data; }
     function ticketAfter(id) { return getAfter(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(id)).data; }
+    function consumptionAfter(id) { return getAfter(/databases/$(database)/documents/shadowfest_live/2026/consumptions/$(id)).data; }
+    function consumptionMatches(id, c) {
+      let p = getAfter(/databases/$(database)/documents/shadowfest_live/2026/consumptionPasses/$(id)).data;
+      let q = getAfter(/databases/$(database)/documents/shadowfest_live/2026/passes/$(c.ticketId)/consumptions/$(id)).data;
+      return p == q && p.keys().hasOnly(['token','description','amountCents','status','shortCode','createdAt'])
+        && p.token == id && p.description == c.description && p.amountCents == c.amountCents
+        && p.status == c.status && p.shortCode == c.shortCode && p.createdAt == c.createdAt;
+    }
     function passMatches(id, t) {
       let p = passAfter(id);
       return p.token == id && p.status == t.status && p.packageId == t.packageId
@@ -131,6 +139,57 @@ service cloud.firestore {
         && request.resource.data.initialSold == 110 && request.resource.data.updatedAt == request.time
         && request.resource.data.approved == getAfter(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data.approved
         && getAfter(/databases/$(database)/documents/shadowfest_live/2026/meta/sales).data.updatedAt == request.time;
+    }
+    match /shadowfest_live/2026/consumptions/{id} {
+      allow get: if door();
+      allow list: if supreme();
+      allow create: if supreme() && id.matches('[a-f0-9]{64}')
+        && request.resource.data.keys().hasOnly(['token','ticketId','ticketCode','buyerName','description','amountCents','status','shortCode','createdAt','createdBy','redeemedAt'])
+        && request.resource.data.token == id && request.resource.data.ticketId.matches('[a-f0-9]{64}')
+        && get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.ticketId)).data.status in ['valid','used']
+        && request.resource.data.ticketCode == ('shortCode' in get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.ticketId)).data ? get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.ticketId)).data.shortCode : '')
+        && request.resource.data.buyerName == (get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.ticketId)).data.buyer == null ? 'Sin nombre' : get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(request.resource.data.ticketId)).data.buyer.name)
+        && request.resource.data.description is string && request.resource.data.description.size() >= 3 && request.resource.data.description.size() <= 500
+        && request.resource.data.amountCents is int && request.resource.data.amountCents >= 1 && request.resource.data.amountCents <= 9999999
+        && request.resource.data.status == 'pending' && request.resource.data.shortCode == null && request.resource.data.redeemedAt == null
+        && request.resource.data.createdAt == request.time && request.resource.data.createdBy == request.auth.uid
+        && consumptionMatches(id,request.resource.data);
+      allow update: if consumptionMatches(id,request.resource.data)
+        && ((supreme() && resource.data.status == 'pending' && request.resource.data.status == 'valid'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','shortCode','approvedAt','approvedBy'])
+          && request.resource.data.shortCode.matches('[A-HJ-NP-Z2-9]{6}')
+          && getAfter(/databases/$(database)/documents/shadowfest_live/2026/consumptionCodes/$(request.resource.data.shortCode)).data.token == id
+          && get(/databases/$(database)/documents/shadowfest_live/2026/tickets/$(resource.data.ticketId)).data.status in ['valid','used']
+          && request.resource.data.approvedAt == request.time && request.resource.data.approvedBy == request.auth.uid)
+        || (supreme() && resource.data.status in ['pending','valid'] && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','cancelledAt','cancelledBy'])
+          && request.resource.data.cancelledAt == request.time && request.resource.data.cancelledBy == request.auth.uid)
+        || (door() && resource.data.status == 'valid' && request.resource.data.status == 'redeemed'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','redeemedAt','redeemedBy'])
+          && request.resource.data.redeemedAt == request.time && request.resource.data.redeemedBy == request.auth.uid));
+    }
+    match /shadowfest_live/2026/consumptionPasses/{id} {
+      allow get: if id.matches('[a-f0-9]{64}');
+      allow create: if supreme() && consumptionAfter(id).createdAt == request.time && consumptionMatches(id,consumptionAfter(id));
+      allow update: if door() && request.resource.data.status != resource.data.status
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','shortCode'])
+        && consumptionMatches(id,consumptionAfter(id));
+    }
+    match /shadowfest_live/2026/passes/{ticketId}/consumptions/{id} {
+      allow get, list: if ticketId.matches('[a-f0-9]{64}')
+        && exists(/databases/$(database)/documents/shadowfest_live/2026/passes/$(ticketId));
+      allow create: if supreme() && consumptionAfter(id).ticketId == ticketId
+        && consumptionAfter(id).createdAt == request.time && consumptionMatches(id,consumptionAfter(id));
+      allow update: if door() && consumptionAfter(id).ticketId == ticketId && request.resource.data.status != resource.data.status
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','shortCode'])
+        && consumptionMatches(id,consumptionAfter(id));
+    }
+    match /shadowfest_live/2026/consumptionCodes/{code} {
+      allow get: if door() && code.matches('[A-HJ-NP-Z2-9]{6}');
+      allow create: if supreme() && code.matches('[A-HJ-NP-Z2-9]{6}')
+        && request.resource.data.keys().hasOnly(['token']) && request.resource.data.token.matches('[a-f0-9]{64}')
+        && consumptionAfter(request.resource.data.token).shortCode == code
+        && consumptionAfter(request.resource.data.token).approvedAt == request.time;
     }
     match /{document=**} { allow read, write: if false; }
   }

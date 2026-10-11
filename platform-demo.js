@@ -1,6 +1,7 @@
-import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011s';
-import { initialSold } from './surprises.js?v=20261011s';
-import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011s';
+import {newShortCode,ticketQuantity} from './ticket-code.js?v=20261011c';
+import { initialSold } from './surprises.js?v=20261011c';
+import { normalizeAccessCode, validStaffCode } from './staff-code.js?v=20261011c';
+import {checkConsumption,publicConsumption} from './consumption.js?v=20261011c';
 const key='shadowfest-platform-v2';
 const random = bytes => [...crypto.getRandomValues(new Uint8Array(bytes))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const initial=()=>({accesses:[],sessions:[],tickets:[]});
@@ -9,8 +10,8 @@ function publicTicket(t){return {id:t.id,name:t.buyer?.name||'Sin nombre',packag
 export async function demoRequest(action,data,token){
   const localSecret=action==='login'?(await (await fetch('.shadowfest-local.json',{cache:'no-store'})).json()).supremeCode:null;
   return navigator.locks.request(key,()=>{
-    const state=read();
-    const save=()=>localStorage.setItem(key,JSON.stringify(state));
+    const state=read();state.consumptions ||= [];
+    const save=()=>{localStorage.setItem(key,JSON.stringify(state));if(typeof window!=='undefined')window.dispatchEvent(new Event('shadowfest-change'));};
     if(action==='stats') return {sold:initialSold+state.tickets.filter(t=>['valid','used'].includes(t.status)).length,initialSold};
     if(action==='login') {
       data.code=normalizeAccessCode(data.code);
@@ -26,6 +27,8 @@ export async function demoRequest(action,data,token){
       return ticket.buyer?publicTicket(ticket):{packageId:ticket.packageId,registered:false};
     }
     if(action==='ticket') {const t=state.tickets.find(t=>(t.token===data.code||t.shortCode===data.code));if(!t)throw new Error('Entrada no encontrada.');return publicTicket(t);}
+    if(action==='consumptionsForTicket'){if(!state.tickets.some(t=>t.token===data.code))throw new Error('Entrada no encontrada.');return state.consumptions.filter(c=>c.ticketId===data.code).map(c=>({id:c.token,...publicConsumption(c)}));}
+    if(action==='consumptionPass'){const c=state.consumptions.find(c=>c.token===data.code);if(!c)throw new Error('Pedido no encontrado.');return {id:c.token,...publicConsumption(c)};}
     if(action==='buyerName'){const t=state.tickets.find(t=>t.token===data.code);if(!t||!['pending','valid'].includes(t.status))throw new Error('Entrada no disponible.');if(t.buyer?.name)throw new Error('Esta entrada ya tiene nombre.');const name=String(data.name||'').trim();if(name.length<2||name.length>80||data.consent!==true)throw new Error('Escribe tu nombre y acepta guardarlo.');t.buyer={name,registeredAt:new Date().toISOString(),source:'buyer'};save();return publicTicket(t);}
     const session=state.sessions.find(s=>s.token===token&&s.expires>Date.now());
     if(!session || (session.actor.id!=='supreme'&&!state.accesses.some(a=>a.id===session.actor.id&&a.active)))throw new Error('Ingresa tu código de acceso.');
@@ -33,6 +36,9 @@ export async function demoRequest(action,data,token){
     if(action==='me')return actor;
     if(action==='logout'){state.sessions=state.sessions.filter(s=>s.token!==token);save();return {};}
     const supreme=()=>{if(actor.role!=='supreme')throw new Error('Solo el organizador supremo puede realizar esta acción.');};
+    if(action==='consumptionList'){supreme();return state.consumptions.map(c=>({id:c.token,...c}));}
+    if(action==='consumptionCreate'){supreme();const description=checkConsumption(data.description,data.amountCents);if(!/^[a-f0-9]{64}$/.test(data.requestId||''))throw new Error('Solicitud de pedido inválida.');const t=state.tickets.find(t=>t.token===data.code||t.shortCode===data.code);if(!t||!['valid','used'].includes(t.status))throw new Error('Primero aprueba la entrada asociada al pedido.');const previous=state.consumptions.find(c=>c.token===data.requestId);if(previous){if(previous.ticketId!==t.token||previous.description!==description||previous.amountCents!==data.amountCents)throw new Error('Solicitud reutilizada con otro pedido.');return {id:previous.token};}const c={token:data.requestId,ticketId:t.token,ticketCode:t.shortCode||'',buyerName:t.buyer?.name||'Sin nombre',description,amountCents:data.amountCents,status:'pending',shortCode:null,createdAt:new Date().toISOString(),createdBy:actor.id,redeemedAt:null};state.consumptions.push(c);save();return {id:c.token};}
+    if(action.startsWith('consumption')){const c=state.consumptions.find(c=>c.token===(data.id||data.code)||c.shortCode===data.code);if(!c)throw new Error('Pedido no encontrado.');if(action==='consumptionApprove'){supreme();if(c.status!=='pending')throw new Error('Solo se aprueban pedidos pendientes.');const t=state.tickets.find(t=>t.token===c.ticketId);if(!t||!['valid','used'].includes(t.status))throw new Error('La entrada asociada no está aprobada.');c.status='valid';do{c.shortCode=newShortCode();}while(state.consumptions.some(other=>other!==c&&other.shortCode===c.shortCode));c.approvedAt=new Date().toISOString();c.approvedBy=actor.id;}else if(action==='consumptionCancel'){supreme();if(!['pending','valid'].includes(c.status))throw new Error('Este pedido ya no se puede anular.');c.status='cancelled';c.cancelledAt=new Date().toISOString();c.cancelledBy=actor.id;}else if(['consumptionLookup','consumptionRedeem'].includes(action)){if(!['supreme','validator'].includes(actor.role))throw new Error('No tienes permiso de canje.');if(action==='consumptionLookup')return {id:c.token,...publicConsumption(c)};if(c.status!=='valid')throw new Error('Pedido ya entregado, anulado o pendiente de pago.');c.status='redeemed';c.redeemedAt=new Date().toISOString();c.redeemedBy=actor.id;}else throw new Error('Operación no disponible.');save();return {};}
     if(action==='accessList'){supreme();return state.accesses.map(({code,...a})=>a);}
     if(action==='accessCreate'){supreme();const name=String(data.name||'').trim(),code=normalizeAccessCode(data.code);if(name.length<2||name.length>60||!validStaffCode(name,code,data.role))throw new Error('Usa la inicial + 26 + tres letras para vendedores, o un código de 8 a 64 caracteres.');if(state.accesses.some(a=>a.code===code))throw new Error('El código ya existe.');const a={id:random(16),name,code,role:data.role,active:true,createdAt:new Date().toISOString()};state.accesses.push(a);save();return {id:a.id};}
     if(action==='accessRevoke'){supreme();const a=state.accesses.find(a=>a.id===data.id);if(!a)throw new Error('Acceso no encontrado.');a.active=false;save();return {};}

@@ -12,6 +12,12 @@ El primer administrador se aprovisiona con credenciales del propietario fuera de
 
 ## Datos y reglas
 
+Las precompras usan `consumptions` (solo el supremo lista y crea; supremo y validadores leen un pedido para canjear), `consumptionCodes` (códigos consultables por personal autorizado), `consumptionPasses/{TOKEN}` (vista del comprador mediante token aleatorio de 256 bits) y `passes/{ticketToken}/consumptions` (pedidos visibles desde el enlace privado de la entrada). No se permite listar todos los pedidos de compradores sin ser supremo. Las vistas públicas omiten UID de staff, comprador y token de entrada.
+
+Registro, aprobación, anulación y canje mantienen las tres representaciones consistentes mediante escrituras atómicas comprobadas por reglas. Solo se crea o aprueba un pedido asociado a una entrada aprobada o ya admitida. El importe en céntimos y el detalle quedan fijos. Los compradores y vendedores no pueden confirmar pagos ni canjes. La entrega exige estado pagado y pasa a `redeemed`; dos entregas simultáneas solo pueden registrar una. Los pedidos no modifican `meta/sales`, `publicStats/sales` ni el estado de entrada. Anular una entrada no anula automáticamente consumos pagados: el admin los revisa por separado.
+
+Las pantallas de pedidos usan listeners de Firestore para recibir cambios, en lugar de consultar toda la lista cada pocos segundos. Los mismos códigos de personal con permiso de validación abren `validar.html` y `canjear.html`; un vendedor mantiene exclusivamente sus permisos de venta de entradas.
+
 La implementación vigente usa `shadowfest_live/2026`. El espacio antiguo `shadowfest_events` permanece bloqueado. `DATAREST` no se usa ni se modifica.
 
 | Colección | Acceso |

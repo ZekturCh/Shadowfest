@@ -18,6 +18,12 @@ La web pública muestra solo un teaser. Precio y cupo pendientes. Los detalles a
 
 DJs invitados durante la noche. Concurso de disfraces: más creativo, más terrorífico y más fiel al personaje. Premios y reglas pendientes.
 
+## Condiciones y precompras
+
+Las mochilas están permitidas. No se permite ingresar comida ni bebidas externas, ni pedir delivery al evento. Habrá venta de comida y bebidas dentro.
+
+Desde la página de una entrada aprobada se solicita la precompra por WhatsApp. La organización confirma productos, cantidades, disponibilidad y precio; el admin registra el pedido y aprueba el pago. El comprador recibe un QR distinto al de ingreso, de un solo canje para retirar todo el pedido. Catálogo y precios de consumos aún pendientes; no publicar productos o importes inventados. Reingreso, cambios y devoluciones siguen pendientes de confirmar.
+
 ## Referencias visuales
 
 La propuesta y videos suministrados muestran patio, DJ en balcón, tentáculos de neón morado y árboles rojos. Las imágenes de la web están rotuladas como conceptuales; no presentarlas como fotografías de una edición realizada ni garantizar montaje exacto.

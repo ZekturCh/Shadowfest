@@ -8,11 +8,15 @@ Enlace principal: https://shadowfest.web.app/ . También disponible en https://z
 
 - `index.html`: compra por WhatsApp al +51 955 121 011, experiencia y sorpresas desde 110 ventas.
 - `admin.html`: admin supremo o vendedor, según su código. Vendedores ven solo sus entradas; admin crea accesos, revisa pagos y aprueba o invalida.
-- `qr.html#TOKEN`: QR individual y nombre opcional del comprador.
+- `qr.html#TOKEN`: QR individual, nombre opcional, solicitud de comida/bebidas por WhatsApp y pedidos del comprador.
+- `canje.html#TOKEN`: pedido y QR de canje, disponible al aprobar el pago.
+- `canjear.html`: admin o personal con permiso de validación, consulta y entrega completa de un pedido pagado una sola vez.
 - `validar.html`: personal de puerta o admin, consulta e ingreso único de entradas aprobadas.
 - `activar.html`: pantalla anterior de registro; no se usa en el flujo actual.
 
 Cada QR queda asignado a quien lo genera, incluido el admin. El vendedor marca el enlace como enviado y solicita aprobación cuando el cliente confirma el pago. Solo la aprobación del admin suma una venta y habilita el QR para entrar. Un pack genera seis entradas individuales.
+
+Las precompras se acuerdan por WhatsApp, sin catálogo ni precios inventados. El supremo registra productos, cantidades, monto y la entrada asociada; luego aprueba el pago. Los pedidos se actualizan en vivo en la página del comprador. El QR de canje usa `SF-CANJE:XXXXXX` y el código manual `C-XXXXXX`; se rechaza en el control de ingreso. Entradas y consumos tienen estados independientes: un canje no registra el ingreso, ni suma entradas vendidas. Un pedido se entrega completo y una sola vez. Para corregir productos o monto, anular el pedido y registrar uno nuevo.
 
 El admin muestra si el cliente registró su nombre, si se ingresó al generar o si todavía no tiene nombre. Los códigos nuevos se entregan por privado. El equipo inicial es Angélica, Jesús, Diego, Lucía, Sebastián y César; el botón de preparación evita duplicar nombres existentes.
 
